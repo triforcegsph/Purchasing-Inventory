@@ -321,11 +321,11 @@ export function PrModule({
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Item Code</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Description</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Assigned Location</th>
-                <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] text-right">PQTO Rem.</th>
-                <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] text-right">Req. Qty</th>
+                <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] text-right">Remaining Qty</th>
+                <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] text-right">Requested Qty</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">UOM</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Validation</th>
-                <th className="px-2 py-1.5 font-semibold text-center w-10">Del</th>
+                <th className="px-2 py-1.5 font-semibold text-center w-12">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#d5dbe2]">
@@ -447,7 +447,7 @@ export function PrModule({
                         </button>
                       ) : (
                         <span className="text-[10px] text-[#6b7280] font-medium">
-                          Needs Approver Role
+                          Pending Approver
                         </span>
                       )
                     )}

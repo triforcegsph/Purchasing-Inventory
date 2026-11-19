@@ -195,7 +195,7 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 <div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-[15px] font-bold tracking-tight">PK1 WORLDWIDE</div>
+                      <div className="text-[15px] font-bold tracking-tight">TRIFORCE GLOBAL SOLUTIONS (TRIFORCEGS)</div>
                       <div className="text-[13px] font-bold flex items-center gap-2">
                         <span>Purchase Order Document</span>
                         <span
@@ -221,10 +221,10 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                   {/* Supplier Box */}
                   <div className="border border-black p-3 w-64 min-h-[90px] text-[11px] space-y-0.5">
                     <div className="font-semibold">{po.vendor}</div>
-                    <div>Viscount Tracking</div>
-                    <div>Unit 12,</div>
-                    <div>Stockley Park</div>
-                    <div className="pt-2 font-mono">UB8 3TH</div>
+                    <div>Authorized Supplier Account</div>
+                    <div>Commercial Industrial Supply</div>
+                    <div>Metro Manila, Philippines</div>
+                    <div className="pt-2 font-mono">Vendor Code: 71004</div>
                   </div>
 
                   {/* Purchase Order Reference */}
@@ -244,15 +244,15 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 <div className="grid grid-cols-2 gap-8 pt-2 text-[11px]">
                   <div>
                     <div className="font-bold mb-0.5">Invoice To:</div>
-                    <div>PK1 Worldwide Limited</div>
-                    <div>Global House</div>
-                    <div>Whitewater Lane</div>
+                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Corporate Headquarters</div>
+                    <div>Procurement &amp; Logistics Division</div>
                   </div>
                   <div>
                     <div className="font-bold mb-0.5">Deliver To:</div>
-                    <div>PK1 Worldwide Limited</div>
-                    <div>Global House</div>
-                    <div>Whitewater Lane</div>
+                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Corporate Headquarters</div>
+                    <div>Procurement &amp; Logistics Division</div>
                   </div>
                 </div>
 
@@ -362,7 +362,7 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 <div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-[15px] font-bold tracking-tight">PK1 WORLDWIDE</div>
+                      <div className="text-[15px] font-bold tracking-tight">TRIFORCE GLOBAL SOLUTIONS (TRIFORCEGS)</div>
                       <div className="text-[13px] font-bold flex items-center gap-2">
                         <span>Sales Order Acknowledgement</span>
                         <span
@@ -399,13 +399,13 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 <div className="grid grid-cols-2 gap-8 text-[11px] pt-2">
                   <div>
                     <div className="font-bold">Acknowledgement Address:</div>
-                    <div>PK1 Worldwide Limited</div>
-                    <div>Global House, Whitewater Lane</div>
+                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Corporate Headquarters, Procurement Division</div>
                   </div>
                   <div>
                     <div className="font-bold">Delivery Address:</div>
-                    <div>PK1 Worldwide Limited</div>
-                    <div>Global House, Whitewater Lane</div>
+                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Corporate Headquarters, Procurement Division</div>
                   </div>
                 </div>
 
@@ -463,7 +463,7 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 {/* Header */}
                 <div className="flex justify-between items-baseline">
                   <div className="flex items-center gap-3">
-                    <span className="text-[16px] font-bold tracking-tight">PK1 WORLDWIDE</span>
+                    <span className="text-[16px] font-bold tracking-tight">TRIFORCE GLOBAL SOLUTIONS (TRIFORCEGS)</span>
                     <span
                       className={`px-2 py-0.5 text-[11px] font-black uppercase tracking-widest border ${
                         isCopy
@@ -484,11 +484,11 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 {/* Company Address & Date */}
                 <div className="flex justify-between items-start pt-2 text-[11px]">
                   <div className="space-y-0.5">
-                    <div>PK1 Worldwide Limited</div>
-                    <div>Global House</div>
-                    <div>Whitewater Lane</div>
-                    <div>Godalming</div>
-                    <div>UK</div>
+                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Corporate Headquarters</div>
+                    <div>Procurement &amp; Logistics Division</div>
+                    <div>Metro Manila</div>
+                    <div>Philippines</div>
                   </div>
                   <div className="text-right">
                     <span className="font-bold">Date: </span>
@@ -508,7 +508,7 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                     <div className="pt-1">
                       <div className="font-bold">Invoice Address:</div>
                       <div>Central Accounts Dept.</div>
-                      <div>Global House, Whitewater Lane</div>
+                      <div>Corporate Headquarters, Metro Manila</div>
                     </div>
                   </div>
 
@@ -580,7 +580,7 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
               </div>
               <div className="flex justify-between items-center text-[10px] text-gray-700 pt-3">
                 <span>
-                  {generatedDate} • DEMO SAMPLE DATA • {isCopy ? `COPY (#${copyNumber})` : 'ORIGINAL'}
+                  {generatedDate} • SAMPLE DOCUMENT • {isCopy ? `COPY (#${copyNumber})` : 'ORIGINAL'}
                   {currency === 'GBP' && ` • Rate: 1 GBP = ${GBP_TO_PHP_RATE.toFixed(2)} PHP`}
                 </span>
                 <span>Page: 1/1</span>

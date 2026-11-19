@@ -222,7 +222,7 @@ export function BoqModule({
             onClick={handleCopySample}
             className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer"
           >
-            <Copy className="w-3 h-3 text-[#0072ed]" /> Copy Sample BOQ
+            <Copy className="w-3 h-3 text-[#0072ed]" /> Insert Sample Item
           </button>
 
           <label className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer">
@@ -243,14 +243,14 @@ export function BoqModule({
             onClick={handleAddBlankRow}
             className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer"
           >
-            <Plus className="w-3 h-3" /> Blank Row
+            <Plus className="w-3 h-3" /> Spacer Row
           </button>
 
           <button
             onClick={handleAddWorksRow}
             className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer"
           >
-            <Plus className="w-3 h-3" /> Works-Related (No Txn)
+            <Plus className="w-3 h-3" /> Non-Transactional Item
           </button>
 
           <div className="ml-auto flex flex-wrap items-center gap-1.5">
@@ -269,7 +269,7 @@ export function BoqModule({
                   arrangementMode === 'master-code' ? 'bg-[#0072ed] text-white' : 'bg-white text-[#1f2328]'
                 }`}
               >
-                Sort Master Code
+                Sort by Item Code
               </button>
             </div>
 
@@ -277,13 +277,13 @@ export function BoqModule({
               onClick={() => setShowCostCenter((v) => !v)}
               className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] text-[#1f2328] rounded-[2px] text-[11px] font-medium cursor-pointer"
             >
-              <Columns className="w-3 h-3" /> {showCostCenter ? 'Hide' : 'Unhide'} CC
+              <Columns className="w-3 h-3" /> {showCostCenter ? 'Hide' : 'Show'} Cost Center
             </button>
             <button
               onClick={() => setShowRemarks((v) => !v)}
               className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] text-[#1f2328] rounded-[2px] text-[11px] font-medium cursor-pointer"
             >
-              <Columns className="w-3 h-3" /> {showRemarks ? 'Hide' : 'Unhide'} Remarks
+              <Columns className="w-3 h-3" /> {showRemarks ? 'Hide' : 'Show'} Remarks
             </button>
           </div>
         </div>
@@ -322,7 +322,7 @@ export function BoqModule({
                 </th>
                 {showCostCenter && <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] min-w-[100px]">Cost Center</th>}
                 {showRemarks && <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] min-w-[160px]">Remarks</th>}
-                <th className="px-2 py-1.5 font-semibold w-10 text-center">Del</th>
+                <th className="px-2 py-1.5 font-semibold w-12 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#d5dbe2]">

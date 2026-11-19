@@ -139,7 +139,7 @@ export function BoqPrintModal({ items, boqStatus, onClose }: BoqPrintModalProps)
               <div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-[15px] font-bold tracking-tight">PK1 WORLDWIDE</div>
+                    <div className="text-[15px] font-bold tracking-tight">TRIFORCE GLOBAL SOLUTIONS (TRIFORCEGS)</div>
                     <div className="text-[13px] font-bold flex items-center gap-2">
                       <span>Bill of Quantities (BOQ) Specification</span>
                       <span
@@ -255,7 +255,7 @@ export function BoqPrintModal({ items, boqStatus, onClose }: BoqPrintModalProps)
             <div className="pt-6 mt-auto print-avoid-break relative z-10">
               <div className="border-b border-black mb-1" />
               <div className="flex justify-between items-center text-[10px] text-gray-700 pt-2">
-                <span>{generatedDate} • DEMO SAMPLE DATA • {isCopy ? `COPY (#${copyNumber})` : 'ORIGINAL'}</span>
+                <span>{generatedDate} • SAMPLE DOCUMENT • {isCopy ? `COPY (#${copyNumber})` : 'ORIGINAL'}</span>
                 <span>Page: 1/1</span>
               </div>
             </div>

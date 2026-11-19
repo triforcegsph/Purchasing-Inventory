@@ -347,12 +347,12 @@ export function PoModule({
                             }}
                             className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#d5002b] hover:bg-[#b00023] text-white rounded-[2px] text-[11px] font-semibold cursor-pointer"
                           >
-                            <XCircle className="w-3 h-3" /> REJECT
+                            <XCircle className="w-3 h-3" /> Reject
                           </button>
                         </>
                       ) : (
                         <span className="text-[10px] text-[#6b7280] font-medium">
-                          Needs Approver Role
+                          Pending Approver
                         </span>
                       )
                     )}

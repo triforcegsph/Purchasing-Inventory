@@ -521,13 +521,13 @@ export function NewRequestModal({
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-[#eef2f6] border-b border-[#cfd5dc] text-[#2d3339]">
-                    <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-40">Quick Pick</th>
+                    <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-40">Catalog Item</th>
                     <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-32">Item Code</th>
                     <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2]">Description</th>
                     <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-36">Location</th>
                     <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-20 text-right">Qty</th>
                     <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-20">UOM</th>
-                    <th className="px-2 py-1.5 font-semibold text-center w-10">Del</th>
+                    <th className="px-2 py-1.5 font-semibold text-center w-12">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#d5dbe2]">

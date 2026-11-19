@@ -476,7 +476,7 @@ export function App() {
 
           {/* Brand Title */}
           <span className="text-xs font-semibold tracking-wide uppercase text-slate-200">
-            Construction Material Control & Procurement
+            TRIFORCEGS • Purchasing &amp; Inventory System
           </span>
 
           {/* SunSystems Function Code Quick-Launch */}
@@ -807,7 +807,7 @@ export function App() {
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1 font-semibold text-slate-700">
                 <Database className="w-3 h-3 text-emerald-600" />
-                Local Cache DB Active (Auto-Saved)
+                Session Storage Active (Auto-Saved)
               </span>
               <span className="hidden sm:inline">•</span>
               <span className="hidden sm:inline">Business Unit: {businessUnit}</span>
@@ -815,9 +815,9 @@ export function App() {
                 type="button"
                 onClick={handleResetDemoDb}
                 className="inline-flex items-center gap-1 px-2 py-0.5 bg-white hover:bg-[#f1f3f5] border border-[#b9c0c8] rounded-[2px] text-[10px] font-semibold text-slate-700 cursor-pointer"
-                title="Clear browser cache database and restore default seed data"
+                title="Clear browser session storage and restore default test data"
               >
-                <RotateCcw className="w-2.5 h-2.5" /> Reset Demo DB
+                <RotateCcw className="w-2.5 h-2.5" /> Reset Test Data
               </button>
             </div>
             <div className="font-mono">
