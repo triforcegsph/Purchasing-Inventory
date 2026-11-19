@@ -344,7 +344,7 @@ export function ReceivingModule({
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search GRN, PO, Ref Doc, IAAS2..."
+              placeholder="Search RCV, PO, Ref Doc, IAAS2..."
               className="w-full h-7 pl-7 pr-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white"
             />
           </div>
@@ -354,7 +354,7 @@ export function ReceivingModule({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#eef2f6] border-b border-[#cfd5dc] text-[#2d3339]">
-                <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">GRN No.</th>
+                <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Receiving No.</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">PO No.</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Ref Doc / IAAS2</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">DR No. & Date</th>
@@ -401,7 +401,7 @@ export function ReceivingModule({
       {showSummary && (
         <SummaryReportModal
           title="Receiving (RCV)"
-          headers={['GRN No.', 'PO No.', 'Ref Doc No.', 'IAAS2 Ref', 'DR No.', 'DR Date', 'Performed At', 'Status']}
+          headers={['Receiving No.', 'PO No.', 'Ref Doc No.', 'IAAS2 Ref', 'DR No.', 'DR Date', 'Performed At', 'Status']}
           rows={receivings.map((r) => [
             r.grnNo,
             r.poNo,

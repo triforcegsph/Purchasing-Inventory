@@ -245,9 +245,16 @@ export function App() {
     e.preventDefault();
     const q = funcJump.trim().toUpperCase();
     if (!q) return;
-    const match = ALL_NAV_ITEMS.find(
-      (i) => i.code === q || i.label.toUpperCase().includes(q)
-    );
+    const aliasMap: Record<string, ModuleKey> = {
+      PRQ: 'pr',
+      POE: 'po',
+      GRN: 'receiving',
+      ISS: 'withdrawal',
+      STR: 'transfers',
+    };
+    const match =
+      ALL_NAV_ITEMS.find((i) => i.key === aliasMap[q]) ||
+      ALL_NAV_ITEMS.find((i) => i.code === q || i.label.toUpperCase().includes(q));
     if (match) {
       setActiveModule(match.key);
       setFuncJump('');

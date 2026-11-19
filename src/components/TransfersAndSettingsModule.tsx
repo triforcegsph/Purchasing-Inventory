@@ -410,14 +410,14 @@ export function TransfersAndSettingsModule({
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#eef2f6] border-b border-[#cfd5dc] text-[#2d3339]">
-                  <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">GRN Receipt #</th>
+                  <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Receiving #</th>
                   <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Purchase Order #</th>
                   <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Ref Doc / IAAS2</th>
                   <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">DR No. &amp; Date</th>
                   <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Delivered Items</th>
                   <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] text-right">Qty Received</th>
                   <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Stocking Date</th>
-                  <th className="px-2.5 py-1.5 font-semibold">GRN Status</th>
+                  <th className="px-2.5 py-1.5 font-semibold">Receiving Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#d5dbe2]">

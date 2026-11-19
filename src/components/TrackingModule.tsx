@@ -163,7 +163,7 @@ export function TrackingModule({
         step5Detail = `Sent to Receiver (0 / ${totalOrderedQty} recv)`;
       } else if (primaryPo.status === 'Partially Received') {
         step5State = 'active';
-        step5Doc = linkedReceivings.map((r) => r.grnNo).join(', ') || 'Partial GRN';
+        step5Doc = linkedReceivings.map((r) => r.grnNo).join(', ') || 'Partial Receiving';
         step5Detail = `On Delivery (${totalReceivedQty} / ${totalOrderedQty} recv)`;
       } else if (primaryPo.status === 'Completed') {
         step5State = 'done';
@@ -314,7 +314,7 @@ export function TrackingModule({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Track by PR, PO, GRN, DR, Item, Vendor..."
+              placeholder="Track by PR, PO, RCV, DR, Item, Vendor..."
               className="w-full h-7 pl-8 pr-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white"
             />
           </div>
