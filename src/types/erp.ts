@@ -1,3 +1,18 @@
+export type UserRole =
+  | 'Applicant/Requestor'
+  | 'REQ Approver'
+  | 'PO Approver'
+  | 'Warehouse Manager';
+
+export interface UserAccount {
+  id: string;
+  username: string;
+  password: string;
+  fullName: string;
+  role: UserRole;
+  department: string;
+}
+
 export type ModuleKey =
   | 'boq'
   | 'pqto'
@@ -6,6 +21,7 @@ export type ModuleKey =
   | 'receiving'
   | 'withdrawal'
   | 'transfers'
+  | 'tracking'
   | 'logs';
 
 export interface FileAttachment {

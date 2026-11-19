@@ -16,6 +16,7 @@ import type {
   PrLineItem,
   PrRecord,
   RequiredFieldConfig,
+  UserRole,
 } from '../types/erp';
 import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge } from './SharedUI';
 
@@ -24,7 +25,7 @@ interface PrModuleProps {
   prs: PrRecord[];
   setPrs: React.Dispatch<React.SetStateAction<PrRecord[]>>;
   config: RequiredFieldConfig;
-  activeRole: 'Applicant' | 'Approver' | 'Warehouse Admin';
+  activeRole: UserRole;
   initialPqtoNo?: string;
   onApprovePr: (prId: string) => void;
   onNavigateToPo: (prNo: string) => void;
@@ -438,7 +439,7 @@ export function PrModule({
                   </td>
                   <td className="px-2.5 py-1.5 text-right space-x-1">
                     {pr.status === 'Pending Approval' && (
-                      activeRole === 'Approver' ? (
+                      activeRole === 'REQ Approver' ? (
                         <button
                           onClick={() => onApprovePr(pr.id)}
                           className="px-2 py-0.5 bg-[#137333] hover:bg-[#0f5c29] text-white rounded-[2px] text-[11px] font-semibold cursor-pointer"
@@ -447,7 +448,7 @@ export function PrModule({
                         </button>
                       ) : (
                         <span className="text-[10px] text-[#6b7280] font-medium">
-                          Pending Approver
+                          Pending REQ Approver
                         </span>
                       )
                     )}

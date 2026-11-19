@@ -13,6 +13,7 @@ import type {
   PoRecord,
   PrRecord,
   RequiredFieldConfig,
+  UserRole,
 } from '../types/erp';
 import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge, SummaryReportModal, getPoStageLabel } from './SharedUI';
 import { PoPrintModal } from './PoPrintModal';
@@ -22,7 +23,7 @@ interface PoModuleProps {
   pos: PoRecord[];
   setPos: React.Dispatch<React.SetStateAction<PoRecord[]>>;
   config: RequiredFieldConfig;
-  activeRole: 'Applicant' | 'Approver' | 'Warehouse Admin';
+  activeRole: UserRole;
   initialPrNo?: string;
   onRejectPo: (poId: string, comments: string) => void;
   onApprovePo: (poId: string) => void;
@@ -331,7 +332,7 @@ export function PoModule({
                       <Printer className="w-3 h-3 text-[#0072ed]" /> Print / PDF
                     </button>
                     {po.status === 'Pending Approval' && (
-                      activeRole === 'Approver' ? (
+                      activeRole === 'PO Approver' ? (
                         <>
                           <button
                             onClick={() => onApprovePo(po.id)}
@@ -352,7 +353,7 @@ export function PoModule({
                         </>
                       ) : (
                         <span className="text-[10px] text-[#6b7280] font-medium">
-                          Pending Approver
+                          Pending PO Approver
                         </span>
                       )
                     )}

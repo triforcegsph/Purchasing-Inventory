@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import {
   ArrowRight,
@@ -12,6 +13,7 @@ import type {
   ModuleKey,
   PoRecord,
   PrRecord,
+  UserRole,
   WithdrawalRecord,
 } from '../types/erp';
 import {
@@ -22,8 +24,6 @@ import {
   getPrStageLabel,
   getWithdrawalStageLabel,
 } from './SharedUI';
-
-type UserRole = 'Applicant' | 'Approver' | 'Warehouse Admin';
 
 interface MyRequestsModalProps {
   activeRole: UserRole;

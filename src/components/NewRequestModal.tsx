@@ -14,12 +14,12 @@ import type {
   PrRecord,
   RequiredFieldConfig,
   StockTransferRecord,
+  UserRole,
   WarehouseStock,
   WithdrawalRecord,
 } from '../types/erp';
 import { AttachmentUploader } from './SharedUI';
 
-type UserRole = 'Applicant' | 'Approver' | 'Warehouse Admin';
 type RequestType = 'PR' | 'ISS' | 'STR';
 
 interface NewRequestModalProps {
@@ -55,26 +55,33 @@ const ROLE_FORM_CONFIG: Record<
     roleLabel: string;
   }
 > = {
-  Applicant: {
-    title: 'Site Engineer (Applicant) — Material Request Form',
+  'Applicant/Requestor': {
+    title: 'Applicant / Requestor — Material Request Form',
     defaultRequester: 'Engr. John Doe',
     defaultType: 'PR',
     allowedTypes: ['PR', 'ISS'],
-    roleLabel: 'Site Engineer Form',
+    roleLabel: 'Applicant/Requestor Form',
   },
-  Approver: {
-    title: 'Project Manager (Approver) — Direct Request Form',
+  'REQ Approver': {
+    title: 'REQ Approver — Requisition Request Form',
+    defaultRequester: 'Engr. Alex Smith',
+    defaultType: 'PR',
+    allowedTypes: ['PR', 'ISS'],
+    roleLabel: 'REQ Approver Form',
+  },
+  'PO Approver': {
+    title: 'PO Approver — Executive Request Form',
     defaultRequester: 'Dir. Jane Doe',
     defaultType: 'PR',
     allowedTypes: ['PR', 'ISS'],
-    roleLabel: 'Project Manager Form',
+    roleLabel: 'PO Approver Form',
   },
-  'Warehouse Admin': {
-    title: 'Site Warehouseman — Warehouse & Stock Request Form',
-    defaultRequester: 'Warehouse Admin',
+  'Warehouse Manager': {
+    title: 'Warehouse Manager — Warehouse & Stock Request Form',
+    defaultRequester: 'Warehouse Manager',
     defaultType: 'ISS',
     allowedTypes: ['ISS', 'PR', 'STR'],
-    roleLabel: 'Warehouse Admin Form',
+    roleLabel: 'Warehouse Manager Form',
   },
 };
 
@@ -98,7 +105,7 @@ export function NewRequestModal({
   const [refDocNo, setRefDocNo] = useState(() => `REF-REQ-${Math.floor(Math.random() * 900 + 100)}`);
   const [spName, setSpName] = useState('SP-MECH-ALPHA');
   const [remarks, setRemarks] = useState('');
-  const [autoApprove, setAutoApprove] = useState(activeRole === 'Approver');
+  const [autoApprove, setAutoApprove] = useState(activeRole === 'REQ Approver');
   const [transferType, setTransferType] = useState<'Stock Transfer' | 'Excess Return to Warehouse'>('Excess Return to Warehouse');
   const [fromLocation, setFromLocation] = useState('Zone A - Pump Room');
   const [toLocation, setToLocation] = useState('Central Warehouse');
@@ -224,7 +231,7 @@ export function NewRequestModal({
         jobNo: jobNo.trim(),
         applicant: requester.trim(),
         spName: spName.trim(),
-        status: asDraft ? 'Draft' : activeRole === 'Approver' && autoApprove ? 'Approved' : 'Pending Approval',
+        status: asDraft ? 'Draft' : activeRole === 'REQ Approver' && autoApprove ? 'Approved' : 'Pending Approval',
         createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
         attachments,
         items,
@@ -335,7 +342,7 @@ export function NewRequestModal({
                     : 'bg-[#f8f9fa] text-[#1f2328] hover:bg-[#eef0f3]'
                 }`}
               >
-                {activeRole === 'Warehouse Admin'
+                {activeRole === 'Warehouse Manager'
                   ? 'Stock Replenishment Request (PRQ)'
                   : 'Purchase Requisition (PRQ)'}
               </button>
@@ -487,7 +494,7 @@ export function NewRequestModal({
               />
             </div>
 
-            {activeRole === 'Approver' && requestType === 'PR' && (
+            {activeRole === 'REQ Approver' && requestType === 'PR' && (
               <div className="sm:col-span-2 lg:col-span-3 pt-1">
                 <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#137333]">
                   <input
@@ -496,7 +503,7 @@ export function NewRequestModal({
                     onChange={(e) => setAutoApprove(e.target.checked)}
                     className="w-3.5 h-3.5 accent-[#137333]"
                   />
-                  Auto-Approve immediately as Project Manager (ready for PO conversion)
+                  Auto-Approve immediately as REQ Approver (ready for PO conversion)
                 </label>
               </div>
             )}
@@ -650,7 +657,7 @@ export function NewRequestModal({
             >
               <Send className="w-3.5 h-3.5" />
               {requestType === 'PR'
-                ? activeRole === 'Approver' && autoApprove
+                ? activeRole === 'REQ Approver' && autoApprove
                   ? 'Submit & Approve PR'
                   : 'Submit Purchase Request'
                 : requestType === 'ISS'

@@ -9,10 +9,12 @@ import {
   FilePlus2,
   FileSpreadsheet,
   History,
+  LogOut,
   Menu,
   PackageCheck,
   PackageMinus,
   RotateCcw,
+  Route,
   Search,
   ShoppingCart,
   UserCheck,
@@ -30,6 +32,8 @@ import type {
   SmtpConfig,
   StockTransferRecord,
   TransactionLog,
+  UserAccount,
+  UserRole,
   WarehouseStock,
   WithdrawalRecord,
 } from './types/erp';
@@ -59,6 +63,8 @@ import { TransfersAndSettingsModule } from './components/TransfersAndSettingsMod
 import { LogsModule } from './components/LogsModule';
 import { NewRequestModal } from './components/NewRequestModal';
 import { MyRequestsModal } from './components/MyRequestsModal';
+import { LoginPage } from './components/LoginPage';
+import { TrackingModule } from './components/TrackingModule';
 
 interface NavGroup {
   group: string;
@@ -94,8 +100,9 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    group: 'Administration & Audit',
+    group: 'Tracking & Audit',
     items: [
+      { key: 'tracking', code: 'TRK', label: 'End-to-End Tracking', icon: Route },
       { key: 'logs', code: 'LOG', label: 'Transaction Logs', icon: History },
     ],
   },
@@ -103,16 +110,18 @@ const NAV_GROUPS: NavGroup[] = [
 
 const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
-const ROLE_MODULES: Record<'Applicant' | 'Approver' | 'Warehouse Admin', ModuleKey[]> = {
-  Applicant: ['boq', 'pqto', 'pr', 'po', 'withdrawal', 'logs'],
-  Approver: ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'logs'],
-  'Warehouse Admin': ['receiving', 'withdrawal', 'transfers', 'po', 'logs'],
+const ROLE_MODULES: Record<UserRole, ModuleKey[]> = {
+  'Applicant/Requestor': ['boq', 'pqto', 'pr', 'po', 'withdrawal', 'tracking', 'logs'],
+  'REQ Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
+  'PO Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
+  'Warehouse Manager': ['receiving', 'withdrawal', 'transfers', 'po', 'tracking', 'logs'],
 };
 
-const ROLE_DEFAULT_MODULE: Record<'Applicant' | 'Approver' | 'Warehouse Admin', ModuleKey> = {
-  Applicant: 'boq',
-  Approver: 'po',
-  'Warehouse Admin': 'receiving',
+const ROLE_DEFAULT_MODULE: Record<UserRole, ModuleKey> = {
+  'Applicant/Requestor': 'boq',
+  'REQ Approver': 'pr',
+  'PO Approver': 'po',
+  'Warehouse Manager': 'receiving',
 };
 
 function useCachedState<T>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -138,13 +147,15 @@ function useCachedState<T>(key: string, defaultValue: T): [T, React.Dispatch<Rea
 }
 
 export function App() {
+  const [currentUser, setCurrentUser] = useCachedState<UserAccount | null>('currentUser', null);
   const [activeModule, setActiveModule] = useCachedState<ModuleKey>('activeModule', 'boq');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [funcJump, setFuncJump] = useState('');
   const [businessUnit, setBusinessUnit] = useCachedState<string>('businessUnit', 'PROJ-TWRB');
-  const [activeRole, setActiveRole] = useCachedState<'Applicant' | 'Approver' | 'Warehouse Admin'>('activeRole', 'Applicant');
   const [showNotifs, setShowNotifs] = useState(false);
+
+  const activeRole: UserRole = currentUser?.role || 'Applicant/Requestor';
 
   // Core ERP State (Persisted to Browser Cache DB)
   const [boqItems, setBoqItems] = useCachedState<BoqItem[]>('boqItems', INITIAL_BOQ_ITEMS);
@@ -170,8 +181,7 @@ export function App() {
       // ignore storage errors
     }
     setBusinessUnit('PROJ-TWRB');
-    setActiveRole('Applicant');
-    setActiveModule('boq');
+    setActiveModule(currentUser ? ROLE_DEFAULT_MODULE[currentUser.role] : 'boq');
     setBoqItems(INITIAL_BOQ_ITEMS);
     setBoqStatus('Draft');
     setPqtos(INITIAL_PQTOS);
@@ -208,12 +218,17 @@ export function App() {
     addLog('System', newProj, 'Switched Project', `Active workspace switched to ${newProj}`);
   };
 
-  const handleRoleChange = (newRole: 'Applicant' | 'Approver' | 'Warehouse Admin') => {
-    setActiveRole(newRole);
-    const allowed = ROLE_MODULES[newRole];
-    if (!allowed.includes(activeModule)) {
-      setActiveModule(ROLE_DEFAULT_MODULE[newRole]);
+  const handleLogin = (account: UserAccount) => {
+    setCurrentUser(account);
+    setActiveModule(ROLE_DEFAULT_MODULE[account.role]);
+    addLog('System', account.role, 'User Signed In', `${account.fullName} (${account.username}) logged in.`);
+  };
+
+  const handleLogout = () => {
+    if (currentUser) {
+      addLog('System', currentUser.role, 'User Signed Out', `${currentUser.fullName} signed out.`);
     }
+    setCurrentUser(null);
   };
 
   const allowedModules = ROLE_MODULES[activeRole];
@@ -455,6 +470,10 @@ export function App() {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#eef0f3] text-[#1f2328]">
       {/* Infor SunSystems Top Masthead */}
@@ -531,19 +550,23 @@ export function App() {
             </select>
           </div>
 
-          {/* Role Switcher */}
+          {/* Logged-In User & Sign Out */}
           <div className="flex items-center gap-1.5 bg-[#181a1e] px-2.5 py-1 border border-[#3c414a] rounded-xs text-xs">
             <UserCheck className="w-3.5 h-3.5 text-[#4da3ff]" />
-            <select
-              value={activeRole}
-              onChange={(e) => handleRoleChange(e.target.value as typeof activeRole)}
-              className="bg-transparent text-white font-medium focus:outline-none cursor-pointer"
-            >
-              <option value="Applicant" className="text-slate-900">Site Engineer (Applicant)</option>
-              <option value="Approver" className="text-slate-900">Project Manager (Approver)</option>
-              <option value="Warehouse Admin" className="text-slate-900">Site Warehouseman</option>
-            </select>
+            <span className="font-medium text-white hidden md:inline">{currentUser.fullName}</span>
+            <span className="text-[10px] font-semibold px-1.5 py-0.2 bg-[#0072ed]/25 text-[#7ebbff] border border-[#0072ed]/40 rounded-[2px]">
+              {activeRole}
+            </span>
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center gap-1 px-2 py-1 bg-[#181a1e] hover:bg-[#32363e] text-slate-200 border border-[#3c414a] rounded-xs text-xs font-medium cursor-pointer"
+            title="Sign Out / Switch Account"
+          >
+            <LogOut className="w-3.5 h-3.5 text-slate-400" />
+            <span className="hidden sm:inline">Sign Out</span>
+          </button>
 
           {/* Notifications Bell */}
           <div className="relative">
@@ -606,10 +629,12 @@ export function App() {
                 Functions
               </span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 bg-[#1c1f24] text-[#4da3ff] border border-[#3c414a] rounded-xs">
-                {activeRole === 'Applicant'
-                  ? 'SITE ENG'
-                  : activeRole === 'Approver'
-                  ? 'PROJ MGR'
+                {activeRole === 'Applicant/Requestor'
+                  ? 'APPLICANT'
+                  : activeRole === 'REQ Approver'
+                  ? 'REQ APPR'
+                  : activeRole === 'PO Approver'
+                  ? 'PO APPR'
                   : 'WAREHOUSE'}
               </span>
             </div>
@@ -809,6 +834,23 @@ export function App() {
                 setSmtpConfig={setSmtpConfig}
                 onAddLog={addLog}
                 businessUnit={businessUnit}
+              />
+            )}
+
+            {activeModule === 'tracking' && (
+              <TrackingModule
+                activeRole={activeRole}
+                pqtos={pqtos}
+                prs={prs}
+                pos={pos}
+                receivings={receivings}
+                withdrawals={withdrawals}
+                logs={logs}
+                onNavigate={(mod) => {
+                  if (ROLE_MODULES[activeRole].includes(mod)) {
+                    setActiveModule(mod);
+                  }
+                }}
               />
             )}
 
