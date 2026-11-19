@@ -58,7 +58,7 @@ export function TransfersAndSettingsModule({
   businessUnit = 'PROJ-TWRB',
   activeRole,
 }: TransfersAndSettingsProps) {
-  const canManageInventory = activeRole === 'Warehouse Manager' || activeRole === 'Purchaser';
+  const canManageInventory = activeRole === 'Warehouse Manager' || activeRole === 'Admin';
   // Local SMTP state if parent doesn't provide setter
   const [localSmtp, setLocalSmtp] = useState<SmtpConfig>(
     smtpConfig || {

@@ -66,6 +66,14 @@ export const SYSTEM_ACCOUNTS: UserAccount[] = [
     role: 'Purchaser',
     department: 'Procurement & Purchasing',
   },
+  {
+    id: 'usr-admin',
+    username: 'admin@triforcegs.com.ph',
+    password: '1234',
+    fullName: 'System Admin',
+    role: 'Admin',
+    department: 'System Administration & Control',
+  },
 ];
 
 interface LoginPageProps {

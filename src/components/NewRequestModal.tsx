@@ -90,6 +90,13 @@ const ROLE_FORM_CONFIG: Record<
     allowedTypes: ['ISS', 'PR', 'STR'],
     roleLabel: 'Warehouse Manager Form',
   },
+  Admin: {
+    title: 'System Admin — Master Request Form',
+    defaultRequester: 'System Admin',
+    defaultType: 'PR',
+    allowedTypes: ['PR', 'ISS', 'STR'],
+    roleLabel: 'System Admin Form',
+  },
 };
 
 export function NewRequestModal({

@@ -7,7 +7,8 @@ const ROLE_VISIBLE_MODULES: Record<UserRole, string[]> = {
   'REQ Approver':        ['BOQ', 'PQTO', 'PR', 'PO', 'SYSTEM', 'SMTP'],
   'PO Approver':         ['BOQ', 'PQTO', 'PR', 'PO', 'SYSTEM', 'SMTP'],
   'Warehouse Manager':   ['RECEIVING', 'WITHDRAWAL', 'TRANSFERS', 'PO', 'INVENTORY', 'SYSTEM', 'SMTP'],
-  'Purchaser':           ['BOQ', 'PQTO', 'PR', 'PO', 'RECEIVING', 'WITHDRAWAL', 'TRANSFERS', 'INVENTORY', 'SYSTEM', 'SMTP'],
+  'Purchaser':           ['BOQ', 'PQTO', 'PR', 'PO', 'SYSTEM', 'SMTP'],
+  'Admin':               ['BOQ', 'PQTO', 'PR', 'PO', 'RECEIVING', 'WITHDRAWAL', 'TRANSFERS', 'INVENTORY', 'SYSTEM', 'SMTP'],
 };
 
 export function LogsModule({ logs, activeRole }: { logs: TransactionLog[]; activeRole: UserRole }) {

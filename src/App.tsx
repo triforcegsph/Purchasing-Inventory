@@ -116,6 +116,7 @@ const ROLE_MODULES: Record<UserRole, ModuleKey[]> = {
   'PO Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'Warehouse Manager': ['receiving', 'withdrawal', 'transfers', 'po', 'tracking', 'logs'],
   'Purchaser': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
+  'Admin': ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'tracking', 'logs'],
 };
 
 const ROLE_DEFAULT_MODULE: Record<UserRole, ModuleKey> = {
@@ -124,6 +125,7 @@ const ROLE_DEFAULT_MODULE: Record<UserRole, ModuleKey> = {
   'PO Approver': 'po',
   'Warehouse Manager': 'receiving',
   'Purchaser': 'po',
+  'Admin': 'transfers',
 };
 
 function useCachedState<T>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
