@@ -182,6 +182,7 @@ export function MyRequestsModal({
                   <thead>
                     <tr className="bg-[#eef2f6] border-b border-[#cfd5dc] text-[#2d3339]">
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">PR No.</th>
+                      <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">PO No.</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Requester</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Ref Doc / PQTO</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Items</th>
@@ -192,11 +193,15 @@ export function MyRequestsModal({
                   </thead>
                   <tbody className="divide-y divide-[#d5dbe2]">
                     {filteredPrs.map((pr, idx) => {
-                      const linkedPo = pos.find((p) => p.prNo === pr.prNo);
-                      const stage = getPrStageLabel(pr.status, linkedPo);
+                      const linkedPos = pos.filter((p) => p.prNo === pr.prNo);
+                      const primaryPo = linkedPos[0];
+                      const stage = getPrStageLabel(pr.status, primaryPo);
                       return (
                         <tr key={pr.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
                           <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{pr.prNo}</td>
+                          <td className="px-2.5 py-1.5 font-mono text-[#005ec4] font-semibold border-r border-[#e5e8ec]">
+                            {linkedPos.length > 0 ? linkedPos.map((p) => p.poNo).join(', ') : '—'}
+                          </td>
                           <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.applicant}</td>
                           <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
                             <span className="font-mono">{pr.refDocNo}</span>
@@ -317,6 +322,7 @@ export function MyRequestsModal({
                   <thead>
                     <tr className="bg-[#eef2f6] border-b border-[#cfd5dc] text-[#2d3339]">
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">PO No.</th>
+                      <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">PR No.</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Applicant</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Vendor</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Files</th>
@@ -330,6 +336,7 @@ export function MyRequestsModal({
                       return (
                         <tr key={po.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
                           <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{po.poNo}</td>
+                          <td className="px-2.5 py-1.5 font-mono text-[#005ec4] border-r border-[#e5e8ec]">{po.prNo}</td>
                           <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{po.applicant}</td>
                           <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{po.vendor}</td>
                           <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
