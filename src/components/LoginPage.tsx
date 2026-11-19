@@ -58,6 +58,14 @@ export const SYSTEM_ACCOUNTS: UserAccount[] = [
     role: 'Warehouse Manager',
     department: 'Central Warehouse & Inventory Control',
   },
+  {
+    id: 'usr-purchaser',
+    username: 'purchaser@triforcegs.com.ph',
+    password: '1234',
+    fullName: 'Purchaser',
+    role: 'Purchaser',
+    department: 'Procurement & Purchasing',
+  },
 ];
 
 interface LoginPageProps {

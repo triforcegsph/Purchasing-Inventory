@@ -115,6 +115,7 @@ const ROLE_MODULES: Record<UserRole, ModuleKey[]> = {
   'REQ Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'PO Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'Warehouse Manager': ['receiving', 'withdrawal', 'transfers', 'po', 'tracking', 'logs'],
+  'Purchaser': ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'tracking', 'logs'],
 };
 
 const ROLE_DEFAULT_MODULE: Record<UserRole, ModuleKey> = {
@@ -122,6 +123,7 @@ const ROLE_DEFAULT_MODULE: Record<UserRole, ModuleKey> = {
   'REQ Approver': 'pr',
   'PO Approver': 'po',
   'Warehouse Manager': 'receiving',
+  'Purchaser': 'po',
 };
 
 function useCachedState<T>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
@@ -750,6 +752,7 @@ export function App() {
                 onSaveDraft={handleSaveBoqDraft}
                 onPostToPqto={handlePostBoqToPqto}
                 onAddLog={addLog}
+                activeRole={activeRole}
               />
             )}
 
@@ -834,6 +837,7 @@ export function App() {
                 setSmtpConfig={setSmtpConfig}
                 onAddLog={addLog}
                 businessUnit={businessUnit}
+                activeRole={activeRole}
               />
             )}
 
@@ -854,7 +858,7 @@ export function App() {
               />
             )}
 
-            {activeModule === 'logs' && <LogsModule logs={logs} />}
+            {activeModule === 'logs' && <LogsModule logs={logs} activeRole={activeRole} />}
           </main>
 
           {/* Footer Status Bar */}

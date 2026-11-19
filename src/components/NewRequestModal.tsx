@@ -76,6 +76,13 @@ const ROLE_FORM_CONFIG: Record<
     allowedTypes: ['PR', 'ISS'],
     roleLabel: 'PO Approver Form',
   },
+  Purchaser: {
+    title: 'Purchaser — Procurement & Requisition Form',
+    defaultRequester: 'Purchaser',
+    defaultType: 'PR',
+    allowedTypes: ['PR', 'ISS'],
+    roleLabel: 'Purchaser Form',
+  },
   'Warehouse Manager': {
     title: 'Warehouse Manager — Warehouse & Stock Request Form',
     defaultRequester: 'Warehouse Manager',

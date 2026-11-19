@@ -2,7 +2,8 @@ export type UserRole =
   | 'Applicant/Requestor'
   | 'REQ Approver'
   | 'PO Approver'
-  | 'Warehouse Manager';
+  | 'Warehouse Manager'
+  | 'Purchaser';
 
 export interface UserAccount {
   id: string;

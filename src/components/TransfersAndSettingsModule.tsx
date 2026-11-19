@@ -6,10 +6,12 @@ import {
   PackageCheck,
   PackageMinus,
   Percent,
+  Plus,
   Search,
   Send,
   ShieldCheck,
   TrendingUp,
+  X,
 } from 'lucide-react';
 import type {
   PoRecord,
@@ -17,6 +19,7 @@ import type {
   RequiredFieldConfig,
   SmtpConfig,
   StockTransferRecord,
+  UserRole,
   WarehouseStock,
   WithdrawalRecord,
 } from '../types/erp';
@@ -36,10 +39,12 @@ interface TransfersAndSettingsProps {
   setSmtpConfig?: React.Dispatch<React.SetStateAction<SmtpConfig>>;
   onAddLog?: (module: string, docNo: string, action: string, comments: string) => void;
   businessUnit?: string;
+  activeRole?: UserRole;
 }
 
 export function TransfersAndSettingsModule({
   stock,
+  setStock,
   transfers,
   config,
   setConfig,
@@ -51,7 +56,9 @@ export function TransfersAndSettingsModule({
   setSmtpConfig,
   onAddLog,
   businessUnit = 'PROJ-TWRB',
+  activeRole,
 }: TransfersAndSettingsProps) {
+  const canManageInventory = activeRole === 'Warehouse Manager' || activeRole === 'Purchaser';
   // Local SMTP state if parent doesn't provide setter
   const [localSmtp, setLocalSmtp] = useState<SmtpConfig>(
     smtpConfig || {
@@ -98,6 +105,42 @@ export function TransfersAndSettingsModule({
 
   // SMTP Testing feedback state
   const [isTestingSmtp, setIsTestingSmtp] = useState(false);
+
+  // Add Item to Inventory form state
+  const [showAddItemForm, setShowAddItemForm] = useState(false);
+  const [newItemCode, setNewItemCode] = useState('');
+  const [newItemDesc, setNewItemDesc] = useState('');
+  const [newItemUom, setNewItemUom] = useState('PC/s');
+  const [newItemTag, setNewItemTag] = useState('MECH');
+  const [newItemLocation, setNewItemLocation] = useState('');
+  const [newItemQty, setNewItemQty] = useState(0);
+
+  const handleAddStockItem = () => {
+    if (!newItemCode.trim() || !newItemDesc.trim()) return;
+    if (!setStock) return;
+    const item: WarehouseStock = {
+      id: `stk-new-${Date.now()}`,
+      itemCode: newItemCode.trim().toUpperCase(),
+      description: newItemDesc.trim(),
+      uom: newItemUom,
+      systemTag: newItemTag,
+      assignedLocation: newItemLocation.trim() || 'Central Warehouse',
+      availableStock: newItemQty,
+      reservedStock: 0,
+    };
+    setStock((prev) => [...prev, item]);
+    if (onAddLog) {
+      onAddLog('Inventory', item.itemCode, 'Item Added to Inventory', `${item.description} — ${item.availableStock} ${item.uom} @ ${item.assignedLocation}`);
+    }
+    notify(`${item.itemCode} added to inventory.`);
+    setNewItemCode('');
+    setNewItemDesc('');
+    setNewItemUom('PC/s');
+    setNewItemTag('MECH');
+    setNewItemLocation('');
+    setNewItemQty(0);
+    setShowAddItemForm(false);
+  };
 
   const notify = (msg: string) => {
     setToast(msg);
@@ -423,6 +466,15 @@ export function TransfersAndSettingsModule({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {canManageInventory && (
+              <button
+                onClick={() => setShowAddItemForm((v) => !v)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#e7f1ff] hover:bg-[#d0e6ff] text-[#004a99] border border-[#b3d1ff] rounded-[2px] text-[11px] font-semibold cursor-pointer"
+              >
+                <Plus className="w-3 h-3" /> Add Item to Inventory
+              </button>
+            )}
+
             {/* System Filter */}
             <div className="flex items-center gap-1 text-xs">
               <span className="text-[#5c646d]">System:</span>
@@ -452,6 +504,91 @@ export function TransfersAndSettingsModule({
             </div>
           </div>
         </div>
+
+        {showAddItemForm && (
+          <div className="px-3 py-3 bg-[#f4f8ff] border-b border-[#b3d1ff]">
+            <div className="text-[11px] font-bold text-[#004a99] uppercase tracking-wide mb-2 flex items-center justify-between">
+              <span>New Inventory Item</span>
+              <button onClick={() => setShowAddItemForm(false)} className="text-[#5c646d] hover:text-[#1f2328] cursor-pointer">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[10px] font-semibold text-[#5c646d] uppercase">Item Code *</label>
+                <input
+                  value={newItemCode}
+                  onChange={(e) => setNewItemCode(e.target.value)}
+                  placeholder="MAT-XXX-00"
+                  className="h-7 px-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white font-mono"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5 col-span-2">
+                <label className="text-[10px] font-semibold text-[#5c646d] uppercase">Description *</label>
+                <input
+                  value={newItemDesc}
+                  onChange={(e) => setNewItemDesc(e.target.value)}
+                  placeholder="e.g. Gate Valve, Flanged PN16 - 100mm"
+                  className="h-7 px-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[10px] font-semibold text-[#5c646d] uppercase">UOM</label>
+                <select
+                  value={newItemUom}
+                  onChange={(e) => setNewItemUom(e.target.value)}
+                  className="h-7 px-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white"
+                >
+                  <option>PC/s</option>
+                  <option>lot</option>
+                  <option>m</option>
+                  <option>kg</option>
+                  <option>set</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[10px] font-semibold text-[#5c646d] uppercase">System Tag</label>
+                <select
+                  value={newItemTag}
+                  onChange={(e) => setNewItemTag(e.target.value)}
+                  className="h-7 px-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white"
+                >
+                  {Array.from(new Set(['MECH', 'ELEC', 'CIVIL', 'PLBG', ...stock.map((s) => s.systemTag)])).map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[10px] font-semibold text-[#5c646d] uppercase">Location</label>
+                <input
+                  value={newItemLocation}
+                  onChange={(e) => setNewItemLocation(e.target.value)}
+                  placeholder="Central Warehouse"
+                  className="h-7 px-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[10px] font-semibold text-[#5c646d] uppercase">Opening Stock</label>
+                <input
+                  type="number"
+                  value={newItemQty}
+                  onChange={(e) => setNewItemQty(Number(e.target.value))}
+                  className="h-7 px-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white text-right"
+                />
+              </div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                onClick={handleAddStockItem}
+                disabled={!newItemCode.trim() || !newItemDesc.trim()}
+                className="inline-flex items-center gap-1 px-3 py-1 bg-[#0072ed] hover:bg-[#005ec4] disabled:bg-[#b9c0c8] text-white text-xs font-semibold rounded-[2px] cursor-pointer disabled:cursor-not-allowed"
+              >
+                <Plus className="w-3 h-3" /> Add to Inventory
+              </button>
+              <span className="text-[11px] text-[#5c646d]">Item will appear immediately in the stock table and in the PR item picker after the next BOQ post.</span>
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">

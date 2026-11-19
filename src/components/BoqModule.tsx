@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { UserRole } from '../types/erp';
 import {
   ArrowRight,
   CheckCircle2,
@@ -25,6 +26,7 @@ interface BoqModuleProps {
   onSaveDraft: () => void;
   onPostToPqto: () => void;
   onAddLog: (module: string, docNo: string, action: string, comments: string) => void;
+  activeRole?: UserRole;
 }
 
 export function BoqModule({
@@ -34,7 +36,9 @@ export function BoqModule({
   onSaveDraft,
   onPostToPqto,
   onAddLog,
+  activeRole,
 }: BoqModuleProps) {
+  const canEdit = activeRole !== 'Applicant/Requestor' && activeRole !== undefined;
   const [arrangementMode, setArrangementMode] = useState<'boq-order' | 'master-code'>('boq-order');
   const [showCostCenter, setShowCostCenter] = useState(true);
   const [showRemarks, setShowRemarks] = useState(true);
@@ -319,50 +323,58 @@ export function BoqModule({
             >
               <Printer className="w-3.5 h-3.5" /> Print BOQ (PDF)
             </button>
-            <button
-              onClick={onSaveDraft}
-              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] text-xs font-semibold rounded-[2px] border border-[#b9c0c8] cursor-pointer"
-            >
-              <Save className="w-3.5 h-3.5 text-[#5c646d]" /> Save as Draft
-            </button>
-            <button
-              onClick={onPostToPqto}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-[#0072ed] hover:bg-[#005ec4] text-white text-xs font-semibold rounded-[2px] cursor-pointer"
-            >
-              Post to PQTO <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            {canEdit && (
+              <>
+                <button
+                  onClick={onSaveDraft}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] text-xs font-semibold rounded-[2px] border border-[#b9c0c8] cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5 text-[#5c646d]" /> Save as Draft
+                </button>
+                <button
+                  onClick={onPostToPqto}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-[#0072ed] hover:bg-[#005ec4] text-white text-xs font-semibold rounded-[2px] cursor-pointer"
+                >
+                  Post to PQTO <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Secondary Toolbar */}
         <div className="px-3 py-2 bg-[#fafbfd] border-b border-[#cfd5dc] flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={handleCopySample}
-            className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer"
-          >
-            <Copy className="w-3 h-3 text-[#0072ed]" /> Insert Sample Item
-          </button>
+          {canEdit && (
+            <>
+              <button
+                onClick={handleCopySample}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer"
+              >
+                <Copy className="w-3 h-3 text-[#0072ed]" /> Insert Sample Item
+              </button>
 
-          <label className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer">
-            <Upload className="w-3 h-3 text-[#137333]" /> Upload CSV
-            <input type="file" accept=".csv" onChange={handleUploadCsv} className="hidden" />
-          </label>
+              <label className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer">
+                <Upload className="w-3 h-3 text-[#137333]" /> Upload CSV
+                <input type="file" accept=".csv" onChange={handleUploadCsv} className="hidden" />
+              </label>
 
-          <button
-            onClick={handleDownloadTemplate}
-            className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer"
-            title="Download a sample CSV template to fill in your materials list"
-          >
-            <Download className="w-3 h-3 text-[#137333]" /> Download CSV Template
-          </button>
+              <button
+                onClick={handleDownloadTemplate}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer"
+                title="Download a sample CSV template to fill in your materials list"
+              >
+                <Download className="w-3 h-3 text-[#137333]" /> Download CSV Template
+              </button>
 
-          <button
-            onClick={handleAddMaterialRow}
-            className="inline-flex items-center gap-1 px-2 py-1 bg-[#e7f1ff] hover:bg-[#d0e6ff] text-[#004a99] border border-[#b3d1ff] rounded-[2px] text-[11px] font-semibold cursor-pointer"
-            title="Add a blank material row to fill in manually"
-          >
-            <FileText className="w-3 h-3" /> Add Material Item
-          </button>
+              <button
+                onClick={handleAddMaterialRow}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-[#e7f1ff] hover:bg-[#d0e6ff] text-[#004a99] border border-[#b3d1ff] rounded-[2px] text-[11px] font-semibold cursor-pointer"
+                title="Add a blank material row to fill in manually"
+              >
+                <FileText className="w-3 h-3" /> Add Material Item
+              </button>
+            </>
+          )}
 
           {hasLegacyFittings && (
             <button
@@ -469,9 +481,11 @@ export function BoqModule({
                         [Blank Line Row]
                       </td>
                       <td className="px-2 py-1.5 text-center">
-                        <button onClick={() => removeItem(item.id)} className="text-[#6b7280] hover:text-[#d5002b] cursor-pointer">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {canEdit && (
+                          <button onClick={() => removeItem(item.id)} className="text-[#6b7280] hover:text-[#d5002b] cursor-pointer">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -493,23 +507,26 @@ export function BoqModule({
                     <td className="px-2.5 py-1 text-[#6b7280] border-r border-[#e5e8ec]">{idx + 1}</td>
                     <td className="p-0 excel-cell border-r border-[#e5e8ec]">
                       <input
+                        readOnly={!canEdit}
                         value={item.itemCode}
-                        onChange={(e) => updateItem(item.id, { itemCode: e.target.value })}
-                        className="w-full px-2.5 py-1.5 bg-transparent font-mono text-xs focus:outline-none"
+                        onChange={(e) => canEdit && updateItem(item.id, { itemCode: e.target.value })}
+                        className={`w-full px-2.5 py-1.5 bg-transparent font-mono text-xs focus:outline-none ${!canEdit ? 'cursor-default' : ''}`}
                       />
                     </td>
                     <td className="p-0 excel-cell border-r border-[#e5e8ec]">
                       <input
+                        readOnly={!canEdit}
                         value={item.description}
-                        onChange={(e) => updateItem(item.id, { description: e.target.value })}
-                        className="w-full px-2.5 py-1.5 bg-transparent text-xs focus:outline-none"
+                        onChange={(e) => canEdit && updateItem(item.id, { description: e.target.value })}
+                        className={`w-full px-2.5 py-1.5 bg-transparent text-xs focus:outline-none ${!canEdit ? 'cursor-default' : ''}`}
                       />
                     </td>
                     <td className="p-0 excel-cell border-r border-[#e5e8ec]">
                       <select
+                        disabled={!canEdit}
                         value={item.boqUom}
                         onChange={(e) => updateItem(item.id, { boqUom: e.target.value })}
-                        className="w-full px-1.5 py-1.5 bg-transparent text-xs focus:outline-none"
+                        className="w-full px-1.5 py-1.5 bg-transparent text-xs focus:outline-none disabled:cursor-default disabled:appearance-none"
                       >
                         <option value="lot">lot</option>
                         <option value="m">m</option>
@@ -519,16 +536,18 @@ export function BoqModule({
                     <td className="p-0 excel-cell border-r border-[#e5e8ec]">
                       <input
                         type="number"
+                        readOnly={!canEdit}
                         value={item.boqQty}
-                        onChange={(e) => updateItem(item.id, { boqQty: Number(e.target.value) })}
-                        className="w-full px-2.5 py-1.5 bg-transparent text-right text-xs focus:outline-none"
+                        onChange={(e) => canEdit && updateItem(item.id, { boqQty: Number(e.target.value) })}
+                        className={`w-full px-2.5 py-1.5 bg-transparent text-right text-xs focus:outline-none ${!canEdit ? 'cursor-default' : ''}`}
                       />
                     </td>
                     <td className="p-0 excel-cell border-r border-[#e5e8ec] bg-[#f4f8ff]">
                       <select
+                        disabled={!canEdit}
                         value={item.pqtoUom}
                         onChange={(e) => updateItem(item.id, { pqtoUom: e.target.value })}
-                        className="w-full px-1.5 py-1.5 bg-transparent text-xs font-medium text-[#004a99] focus:outline-none"
+                        className="w-full px-1.5 py-1.5 bg-transparent text-xs font-medium text-[#004a99] focus:outline-none disabled:cursor-default disabled:appearance-none"
                       >
                         <option value="PC/s">PC/s</option>
                         <option value="lot">lot</option>
@@ -538,25 +557,27 @@ export function BoqModule({
                     <td className="p-0 excel-cell border-r border-[#e5e8ec] bg-[#f4f8ff]">
                       <input
                         type="number"
-                        disabled={item.isWorksRelated}
+                        disabled={!canEdit || item.isWorksRelated}
                         value={item.pqtoQty}
                         onChange={(e) => updateItem(item.id, { pqtoQty: Number(e.target.value) })}
-                        className="w-full px-2.5 py-1.5 bg-transparent text-right text-xs font-semibold text-[#004a99] focus:outline-none disabled:text-slate-400"
+                        className="w-full px-2.5 py-1.5 bg-transparent text-right text-xs font-semibold text-[#004a99] focus:outline-none disabled:text-slate-400 disabled:cursor-default"
                       />
                     </td>
                     <td className="p-0 excel-cell border-r border-[#e5e8ec]">
                       <input
+                        readOnly={!canEdit}
                         value={item.assignedLocation}
-                        onChange={(e) => updateItem(item.id, { assignedLocation: e.target.value })}
-                        className="w-full px-2.5 py-1.5 bg-transparent text-xs focus:outline-none"
+                        onChange={(e) => canEdit && updateItem(item.id, { assignedLocation: e.target.value })}
+                        className={`w-full px-2.5 py-1.5 bg-transparent text-xs focus:outline-none ${!canEdit ? 'cursor-default' : ''}`}
                       />
                     </td>
                     {showCostCenter && (
                       <td className="p-0 excel-cell border-r border-[#e5e8ec]">
                         <input
+                          readOnly={!canEdit}
                           value={item.costCenter || ''}
-                          onChange={(e) => updateItem(item.id, { costCenter: e.target.value })}
-                          className="w-full px-2.5 py-1.5 bg-transparent text-xs focus:outline-none"
+                          onChange={(e) => canEdit && updateItem(item.id, { costCenter: e.target.value })}
+                          className={`w-full px-2.5 py-1.5 bg-transparent text-xs focus:outline-none ${!canEdit ? 'cursor-default' : ''}`}
                         />
                       </td>
                     )}
@@ -572,12 +593,14 @@ export function BoqModule({
                       </td>
                     )}
                     <td className="px-2 py-1.5 text-center">
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="text-[#6b7280] hover:text-[#d5002b] cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="text-[#6b7280] hover:text-[#d5002b] cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

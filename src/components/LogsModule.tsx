@@ -1,11 +1,22 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import type { TransactionLog } from '../types/erp';
+import type { TransactionLog, UserRole } from '../types/erp';
 
-export function LogsModule({ logs }: { logs: TransactionLog[] }) {
+const ROLE_VISIBLE_MODULES: Record<UserRole, string[]> = {
+  'Applicant/Requestor': ['BOQ', 'PQTO', 'PR', 'PO', 'WITHDRAWAL', 'SYSTEM', 'SMTP'],
+  'REQ Approver':        ['BOQ', 'PQTO', 'PR', 'PO', 'SYSTEM', 'SMTP'],
+  'PO Approver':         ['BOQ', 'PQTO', 'PR', 'PO', 'SYSTEM', 'SMTP'],
+  'Warehouse Manager':   ['RECEIVING', 'WITHDRAWAL', 'TRANSFERS', 'PO', 'INVENTORY', 'SYSTEM', 'SMTP'],
+  'Purchaser':           ['BOQ', 'PQTO', 'PR', 'PO', 'RECEIVING', 'WITHDRAWAL', 'TRANSFERS', 'INVENTORY', 'SYSTEM', 'SMTP'],
+};
+
+export function LogsModule({ logs, activeRole }: { logs: TransactionLog[]; activeRole: UserRole }) {
   const [query, setQuery] = useState('');
 
-  const filtered = logs.filter(
+  const visibleModules = ROLE_VISIBLE_MODULES[activeRole];
+  const roleLogs = logs.filter((l) => visibleModules.includes(l.module.toUpperCase()));
+
+  const filtered = roleLogs.filter(
     (l) =>
       l.docNo.toLowerCase().includes(query.toLowerCase()) ||
       l.spName.toLowerCase().includes(query.toLowerCase()) ||
@@ -17,9 +28,14 @@ export function LogsModule({ logs }: { logs: TransactionLog[] }) {
   return (
     <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
       <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
-          LOG — Transaction Audit Logs
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+            LOG — Transaction Audit Logs
+          </span>
+          <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-[#e7f1ff] text-[#004a99] border border-[#b3d1ff] rounded-[2px]">
+            {activeRole}
+          </span>
+        </div>
 
         <div className="relative w-full sm:w-64">
           <Search className="w-3 h-3 text-[#6b7280] absolute left-2 top-1/2 -translate-y-1/2" />
