@@ -14,7 +14,7 @@ import type {
   PrRecord,
   RequiredFieldConfig,
 } from '../types/erp';
-import { AttachmentUploader, StatusBadge, SummaryReportModal } from './SharedUI';
+import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge, SummaryReportModal } from './SharedUI';
 import { PoPrintModal } from './PoPrintModal';
 
 interface PoModuleProps {
@@ -58,6 +58,7 @@ export function PoModule({
   const [rejectError, setRejectError] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   const [printPo, setPrintPo] = useState<PoRecord | null>(null);
+  const [viewingAttachments, setViewingAttachments] = useState<{ docNo: string; attachments: FileAttachment[] } | null>(null);
 
   const selectedPr = prs.find((p) => p.prNo === selectedPrNo) || approvedPrs[0];
 
@@ -293,6 +294,7 @@ export function PoModule({
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">PR No.</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Ref Doc / IAAS2</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Vendor</th>
+                <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Files</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Status</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Comments</th>
                 <th className="px-2.5 py-1.5 font-semibold text-right">Actions</th>
@@ -308,6 +310,12 @@ export function PoModule({
                     <div className="text-[11px] text-[#5c646d] font-mono">{po.iaas2RefNo}</div>
                   </td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{po.vendor}</td>
+                  <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
+                    <AttachmentCellButton
+                      attachments={po.attachments}
+                      onOpen={() => setViewingAttachments({ docNo: po.poNo, attachments: po.attachments })}
+                    />
+                  </td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
                     <StatusBadge status={po.status} />
                   </td>
@@ -417,6 +425,14 @@ export function PoModule({
           allPos={pos}
           onSelectPo={(newPo) => setPrintPo(newPo)}
           onClose={() => setPrintPo(null)}
+        />
+      )}
+
+      {viewingAttachments && (
+        <AttachmentViewerModal
+          docNo={viewingAttachments.docNo}
+          attachments={viewingAttachments.attachments}
+          onClose={() => setViewingAttachments(null)}
         />
       )}
     </div>

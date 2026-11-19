@@ -17,7 +17,7 @@ import type {
   PrRecord,
   RequiredFieldConfig,
 } from '../types/erp';
-import { AttachmentUploader, StatusBadge } from './SharedUI';
+import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge } from './SharedUI';
 
 interface PrModuleProps {
   pqtos: PqtoRecord[];
@@ -63,6 +63,7 @@ export function PrModule({
   });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [viewingAttachments, setViewingAttachments] = useState<{ docNo: string; attachments: FileAttachment[] } | null>(null);
 
   const activePqto = pqtos.find((p) => p.pqtoNo === selectedPqtoNo) || pqtos[0];
 
@@ -426,7 +427,12 @@ export function PrModule({
                   <td className="px-2.5 py-1.5 text-[#005ec4] font-mono border-r border-[#e5e8ec]">{pr.pqtoNo}</td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.refDocNo}</td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.items.length}</td>
-                  <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.attachments.length}</td>
+                  <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
+                    <AttachmentCellButton
+                      attachments={pr.attachments}
+                      onOpen={() => setViewingAttachments({ docNo: pr.prNo, attachments: pr.attachments })}
+                    />
+                  </td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
                     <StatusBadge status={pr.status} />
                   </td>
@@ -460,6 +466,14 @@ export function PrModule({
           </table>
         </div>
       </div>
+
+      {viewingAttachments && (
+        <AttachmentViewerModal
+          docNo={viewingAttachments.docNo}
+          attachments={viewingAttachments.attachments}
+          onClose={() => setViewingAttachments(null)}
+        />
+      )}
     </div>
   );
 }

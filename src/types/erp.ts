@@ -14,6 +14,7 @@ export interface FileAttachment {
   type: 'PDF' | 'JPG' | 'PNG' | 'XLSX' | 'OTHER';
   size: string;
   uploadedAt: string;
+  dataUrl?: string;
 }
 
 export interface BoqItem {

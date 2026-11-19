@@ -24,9 +24,11 @@ const getStoredPrintCount = (key: string): number => {
   }
 };
 
+const GBP_TO_PHP_RATE = 74.5;
+
 export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate = 'po' }: PoPrintModalProps) {
   const docTemplate = initialTemplate;
-  const [currency, setCurrency] = useState<'GBP' | 'PHP'>('GBP');
+  const [currency, setCurrency] = useState<'GBP' | 'PHP'>('PHP');
   const [printCounts, setPrintCounts] = useState<Record<string, number>>({});
   const [generatedDate] = useState(() => {
     const d = new Date();
@@ -46,6 +48,10 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
 
   const entryDate = po.createdAt ? po.createdAt.split(' ')[0] : '11/06/2026';
 
+  const convertFromPhp = (phpVal: number) => {
+    return currency === 'GBP' ? phpVal / GBP_TO_PHP_RATE : phpVal;
+  };
+
   const calculateSubtotal = () => {
     return po.items.reduce((sum, it) => sum + (it.poQty * (it.unitPrice || 0)), 0);
   };
@@ -54,8 +60,9 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
   const vat = subtotal * 0.12;
   const grandTotal = subtotal + vat;
 
-  const formatAmount = (val: number) => {
-    return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatAmount = (phpVal: number) => {
+    const converted = convertFromPhp(phpVal);
+    return converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const handlePrint = () => {
@@ -572,7 +579,10 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 <span className="font-mono">{formatAmount(subtotal)} {currency}</span>
               </div>
               <div className="flex justify-between items-center text-[10px] text-gray-700 pt-3">
-                <span>{generatedDate} • DEMO SAMPLE DATA • {isCopy ? `COPY (#${copyNumber})` : 'ORIGINAL'}</span>
+                <span>
+                  {generatedDate} • DEMO SAMPLE DATA • {isCopy ? `COPY (#${copyNumber})` : 'ORIGINAL'}
+                  {currency === 'GBP' && ` • Rate: 1 GBP = ${GBP_TO_PHP_RATE.toFixed(2)} PHP`}
+                </span>
                 <span>Page: 1/1</span>
               </div>
             </div>

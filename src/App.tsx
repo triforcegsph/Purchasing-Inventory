@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowLeftRight,
   Bell,
@@ -12,6 +12,7 @@ import {
   Menu,
   PackageCheck,
   PackageMinus,
+  RotateCcw,
   Search,
   ShoppingCart,
   UserCheck,
@@ -113,29 +114,77 @@ const ROLE_DEFAULT_MODULE: Record<'Applicant' | 'Approver' | 'Warehouse Admin', 
   'Warehouse Admin': 'receiving',
 };
 
+function useCachedState<T>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const storageKey = `erp_cache_${key}`;
+  const [state, setState] = useState<T>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? (JSON.parse(saved) as T) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch {
+      // ignore storage quota errors
+    }
+  }, [storageKey, state]);
+
+  return [state, setState];
+}
+
 export function App() {
-  const [activeModule, setActiveModule] = useState<ModuleKey>('boq');
+  const [activeModule, setActiveModule] = useCachedState<ModuleKey>('activeModule', 'boq');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [funcJump, setFuncJump] = useState('');
-  const [businessUnit, setBusinessUnit] = useState('PROJ-TWRB');
-  const [activeRole, setActiveRole] = useState<'Applicant' | 'Approver' | 'Warehouse Admin'>('Applicant');
+  const [businessUnit, setBusinessUnit] = useCachedState<string>('businessUnit', 'PROJ-TWRB');
+  const [activeRole, setActiveRole] = useCachedState<'Applicant' | 'Approver' | 'Warehouse Admin'>('activeRole', 'Applicant');
   const [showNotifs, setShowNotifs] = useState(false);
 
-  // Core ERP State
-  const [boqItems, setBoqItems] = useState<BoqItem[]>(INITIAL_BOQ_ITEMS);
-  const [boqStatus, setBoqStatus] = useState<'Draft' | 'Posted'>('Draft');
-  const [pqtos, setPqtos] = useState<PqtoRecord[]>(INITIAL_PQTOS);
-  const [prs, setPrs] = useState<PrRecord[]>(INITIAL_PRS);
-  const [pos, setPos] = useState<PoRecord[]>(INITIAL_POS);
-  const [receivings, setReceivings] = useState<ReceivingRecord[]>(INITIAL_RECEIVINGS);
-  const [stock, setStock] = useState<WarehouseStock[]>(INITIAL_STOCK);
-  const [withdrawals, setWithdrawals] = useState<WithdrawalRecord[]>(INITIAL_WITHDRAWALS);
-  const [transfers, setTransfers] = useState<StockTransferRecord[]>(INITIAL_TRANSFERS);
-  const [logs, setLogs] = useState<TransactionLog[]>(INITIAL_LOGS);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
-  const [config, setConfig] = useState<RequiredFieldConfig>(INITIAL_REQUIRED_CONFIG);
-  const [smtpConfig, setSmtpConfig] = useState<SmtpConfig>(INITIAL_SMTP_CONFIG);
+  // Core ERP State (Persisted to Browser Cache DB)
+  const [boqItems, setBoqItems] = useCachedState<BoqItem[]>('boqItems', INITIAL_BOQ_ITEMS);
+  const [boqStatus, setBoqStatus] = useCachedState<'Draft' | 'Posted'>('boqStatus', 'Draft');
+  const [pqtos, setPqtos] = useCachedState<PqtoRecord[]>('pqtos', INITIAL_PQTOS);
+  const [prs, setPrs] = useCachedState<PrRecord[]>('prs', INITIAL_PRS);
+  const [pos, setPos] = useCachedState<PoRecord[]>('pos', INITIAL_POS);
+  const [receivings, setReceivings] = useCachedState<ReceivingRecord[]>('receivings', INITIAL_RECEIVINGS);
+  const [stock, setStock] = useCachedState<WarehouseStock[]>('stock', INITIAL_STOCK);
+  const [withdrawals, setWithdrawals] = useCachedState<WithdrawalRecord[]>('withdrawals', INITIAL_WITHDRAWALS);
+  const [transfers, setTransfers] = useCachedState<StockTransferRecord[]>('transfers', INITIAL_TRANSFERS);
+  const [logs, setLogs] = useCachedState<TransactionLog[]>('logs', INITIAL_LOGS);
+  const [notifications, setNotifications] = useCachedState<NotificationItem[]>('notifications', INITIAL_NOTIFICATIONS);
+  const [config, setConfig] = useCachedState<RequiredFieldConfig>('config', INITIAL_REQUIRED_CONFIG);
+  const [smtpConfig, setSmtpConfig] = useCachedState<SmtpConfig>('smtpConfig', INITIAL_SMTP_CONFIG);
+
+  const handleResetDemoDb = () => {
+    try {
+      Object.keys(localStorage).forEach((k) => {
+        if (k.startsWith('erp_cache_')) localStorage.removeItem(k);
+      });
+    } catch {
+      // ignore storage errors
+    }
+    setBusinessUnit('PROJ-TWRB');
+    setActiveRole('Applicant');
+    setActiveModule('boq');
+    setBoqItems(INITIAL_BOQ_ITEMS);
+    setBoqStatus('Draft');
+    setPqtos(INITIAL_PQTOS);
+    setPrs(INITIAL_PRS);
+    setPos(INITIAL_POS);
+    setReceivings(INITIAL_RECEIVINGS);
+    setStock(INITIAL_STOCK);
+    setWithdrawals(INITIAL_WITHDRAWALS);
+    setTransfers(INITIAL_TRANSFERS);
+    setLogs(INITIAL_LOGS);
+    setNotifications(INITIAL_NOTIFICATIONS);
+    setConfig(INITIAL_REQUIRED_CONFIG);
+    setSmtpConfig(INITIAL_SMTP_CONFIG);
+  };
 
   // Navigation context
   const [selectedPqtoForPr, setSelectedPqtoForPr] = useState<string | undefined>(undefined);
@@ -758,10 +807,18 @@ export function App() {
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1 font-semibold text-slate-700">
                 <Database className="w-3 h-3 text-emerald-600" />
-                SAP HANA Connected
+                Local Cache DB Active (Auto-Saved)
               </span>
               <span className="hidden sm:inline">•</span>
               <span className="hidden sm:inline">Business Unit: {businessUnit}</span>
+              <button
+                type="button"
+                onClick={handleResetDemoDb}
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-white hover:bg-[#f1f3f5] border border-[#b9c0c8] rounded-[2px] text-[10px] font-semibold text-slate-700 cursor-pointer"
+                title="Clear browser cache database and restore default seed data"
+              >
+                <RotateCcw className="w-2.5 h-2.5" /> Reset Demo DB
+              </button>
             </div>
             <div className="font-mono">
               1 License : 1 User • Mobile Ready
