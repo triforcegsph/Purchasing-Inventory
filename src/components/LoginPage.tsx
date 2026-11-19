@@ -19,6 +19,22 @@ export const SYSTEM_ACCOUNTS: UserAccount[] = [
     department: 'Site Engineering & Operations',
   },
   {
+    id: 'usr-applicant-2',
+    username: 'applicant2@triforcegs.com.ph',
+    password: '1234',
+    fullName: 'Engr. Maria Santos',
+    role: 'Applicant/Requestor',
+    department: 'Civil & Structural Engineering',
+  },
+  {
+    id: 'usr-applicant-3',
+    username: 'applicant3@triforcegs.com.ph',
+    password: '1234',
+    fullName: 'Engr. Carlos Reyes',
+    role: 'Applicant/Requestor',
+    department: 'Electrical & MEPF Operations',
+  },
+  {
     id: 'usr-req-approver',
     username: 'req.approver@triforcegs.com.ph',
     password: '1234',
