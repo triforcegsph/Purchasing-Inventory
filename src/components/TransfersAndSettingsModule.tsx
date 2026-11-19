@@ -298,7 +298,10 @@ export function TransfersAndSettingsModule({
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-[#0072ed]" />
             <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
-              Issuance Total vs. Total Order — Completion &amp; Projection Cost Dashboard
+              Project Cost &amp; Completion Overview
+            </span>
+            <span className="text-[11px] text-[#5c646d]">
+              (Site Withdrawals vs. Purchase Order Budget)
             </span>
           </div>
           <span className="text-[11px] text-[#5c646d] font-mono">
@@ -373,6 +376,112 @@ export function TransfersAndSettingsModule({
               <span>Variance: ₱ {budgetVariance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (On Track)</span>
             </div>
           </div>
+        </div>
+
+        {/* Visual Pie Charts (Units & Budget Breakdown) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          {/* Pie 1: Material Completion (Units) */}
+          {(() => {
+            const pct = Math.min(100, Math.max(0, completionPercentage));
+            const r = 36;
+            const c = 2 * Math.PI * r;
+            const filled = (pct / 100) * c;
+            return (
+              <div className="border border-[#cfd5dc] rounded-[2px] p-3 bg-[#fafbfd] flex items-center gap-4">
+                <div className="relative w-24 h-24 shrink-0">
+                  <svg viewBox="0 0 100 100" className="w-24 h-24 -rotate-90">
+                    <circle cx="50" cy="50" r={r} fill="none" stroke="#dbe4ee" strokeWidth="16" />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r={r}
+                      fill="none"
+                      stroke="#137333"
+                      strokeWidth="16"
+                      strokeDasharray={`${filled} ${c}`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xs font-black text-[#1f2328] font-mono">{pct.toFixed(1)}%</span>
+                    <span className="text-[9px] uppercase text-[#5c646d]">Issued</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5 text-xs flex-1 min-w-0">
+                  <div className="font-bold text-[#1f2328] uppercase text-[11px] tracking-wide">
+                    Material Completion (Units)
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[#495057]">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-[#137333] inline-block" />
+                      Issued to Site
+                    </span>
+                    <span className="font-mono font-semibold text-[#137333]">{totalIssuedQty} units</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[#495057]">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-[#dbe4ee] inline-block" />
+                      Remaining on Order
+                    </span>
+                    <span className="font-mono font-semibold text-[#1f2328]">{remainingQty} units</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Pie 2: Budget Spend Breakdown (PHP) */}
+          {(() => {
+            const pct = Math.min(100, Math.max(0, financialCompletionPercentage));
+            const r = 36;
+            const c = 2 * Math.PI * r;
+            const filled = (pct / 100) * c;
+            const remainingBudget = Math.max(0, totalOrderBudget - totalIssuedCost);
+            return (
+              <div className="border border-[#cfd5dc] rounded-[2px] p-3 bg-[#fafbfd] flex items-center gap-4">
+                <div className="relative w-24 h-24 shrink-0">
+                  <svg viewBox="0 0 100 100" className="w-24 h-24 -rotate-90">
+                    <circle cx="50" cy="50" r={r} fill="none" stroke="#dbe4ee" strokeWidth="16" />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r={r}
+                      fill="none"
+                      stroke="#0072ed"
+                      strokeWidth="16"
+                      strokeDasharray={`${filled} ${c}`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xs font-black text-[#1f2328] font-mono">{pct.toFixed(1)}%</span>
+                    <span className="text-[9px] uppercase text-[#5c646d]">Spent</span>
+                  </div>
+                </div>
+                <div className="space-y-1.5 text-xs flex-1 min-w-0">
+                  <div className="font-bold text-[#1f2328] uppercase text-[11px] tracking-wide">
+                    Budget Spend Breakdown (PHP)
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[#495057]">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-[#0072ed] inline-block" />
+                      Issued Value
+                    </span>
+                    <span className="font-mono font-semibold text-[#005ec4]">
+                      ₱ {totalIssuedCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[#495057]">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-[#dbe4ee] inline-block" />
+                      Remaining PO Budget
+                    </span>
+                    <span className="font-mono font-semibold text-[#1f2328]">
+                      ₱ {remainingBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
