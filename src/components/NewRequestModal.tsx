@@ -112,20 +112,35 @@ export function NewRequestModal({
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [rows, setRows] = useState<RequestDraftRow[]>([
-    {
-      id: `req-row-1`,
-      itemCode: stock[0]?.itemCode || 'MAT-PIP-100-40',
-      description: stock[0]?.description || 'B.I. Pipe Sch-40, Seamless - 100mm (6m/length)',
-      uom: stock[0]?.uom || 'PC/s',
-      qty: 2,
-      assignedLocation: stock[0]?.assignedLocation || 'Bldg B - B2 Pump Room',
-      pqtoQty: 20,
-      isNewItem: false,
-    },
-  ]);
-
   const activePqto = pqtos.find((p) => p.pqtoNo === selectedPqtoNo) || pqtos[0];
+
+  const [rows, setRows] = useState<RequestDraftRow[]>(() => {
+    const firstItem = stock[0];
+    const code = firstItem?.itemCode || 'MAT-PIP-100-40';
+    const pqtoMatch = pqtos[0]?.items.find((i) => i.itemCode === code);
+    const rem = pqtoMatch ? Math.max(0, pqtoMatch.pqtoQty - pqtoMatch.prOrderedQty) : 0;
+    return [
+      {
+        id: 'req-row-1',
+        itemCode: code,
+        description: firstItem?.description || 'B.I. Pipe Sch-40, Seamless - 100mm (6m/length)',
+        uom: firstItem?.uom || 'PC/s',
+        qty: rem > 0 ? Math.min(2, rem) : 1,
+        assignedLocation: firstItem?.assignedLocation || 'Bldg B - B2 Pump Room',
+        pqtoQty: rem,
+        isNewItem: !pqtoMatch,
+      },
+    ];
+  });
+
+  const getRowPqtoRemaining = (r: RequestDraftRow) => {
+    const match = activePqto?.items.find((i) => i.itemCode === r.itemCode.trim());
+    if (!match) return { remaining: r.pqtoQty, isNewItem: true };
+    return {
+      remaining: Math.max(0, match.pqtoQty - match.prOrderedQty),
+      isNewItem: false,
+    };
+  };
 
   const handleAddBlankRow = () => {
     setRows((prev) => [
@@ -179,13 +194,23 @@ export function NewRequestModal({
       setErrorMsg('Requester name is required.');
       return;
     }
+    if (!jobNo.trim()) {
+      setErrorMsg('Job / Project No. is required.');
+      return;
+    }
+    if (config.spName && !spName.trim()) {
+      setErrorMsg('SP Name / Cost Code is required.');
+      return;
+    }
     if (rows.length === 0) {
       setErrorMsg('Please add at least one item row.');
       return;
     }
-    const invalidRow = rows.find((r) => !r.itemCode.trim() || !r.description.trim() || r.qty <= 0);
+    const invalidRow = rows.find(
+      (r) => !r.itemCode.trim() || !r.description.trim() || !Number.isFinite(r.qty) || r.qty <= 0
+    );
     if (invalidRow) {
-      setErrorMsg('All line items must have an Item Code, Description, and Quantity > 0.');
+      setErrorMsg('All line items must have an Item Code, Description, and Quantity greater than 0.');
       return;
     }
 
@@ -201,10 +226,14 @@ export function NewRequestModal({
       }
 
       if (!asDraft && config.blockExceedPqto) {
-        const exceeded = rows.find((r) => !r.isNewItem && r.pqtoQty > 0 && r.qty > r.pqtoQty);
+        const exceeded = rows.find((r) => {
+          const { remaining, isNewItem } = getRowPqtoRemaining(r);
+          return !isNewItem && r.qty > remaining;
+        });
         if (exceeded) {
+          const { remaining } = getRowPqtoRemaining(exceeded);
           setErrorMsg(
-            `Blocked: Requested qty (${exceeded.qty}) for ${exceeded.itemCode} exceeds PQTO remaining (${exceeded.pqtoQty}).`
+            `Blocked: Requested qty (${exceeded.qty}) for ${exceeded.itemCode} exceeds PQTO remaining (${remaining}).`
           );
           return;
         }
@@ -244,6 +273,14 @@ export function NewRequestModal({
     }
 
     if (requestType === 'STR') {
+      if (!fromLocation.trim() || (transferType === 'Stock Transfer' && !toLocation.trim())) {
+        setErrorMsg(
+          transferType === 'Stock Transfer'
+            ? 'From Location and To Location are required for a Stock Transfer.'
+            : 'From Location is required for an Excess Return.'
+        );
+        return;
+      }
       const firstRow = rows[0];
       const tr: StockTransferRecord = {
         id: `tr-${Date.now()}`,
@@ -534,12 +571,24 @@ export function NewRequestModal({
                     <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-36">Location</th>
                     <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-20 text-right">Qty</th>
                     <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-20">UOM</th>
+                    <th className="px-2 py-1.5 font-semibold border-r border-[#d5dbe2] w-36 text-center">Validation</th>
                     <th className="px-2 py-1.5 font-semibold text-center w-12">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#d5dbe2]">
-                  {rows.map((r) => (
-                    <tr key={r.id} className="bg-white">
+                  {rows.map((r) => {
+                    const invalidQty = !Number.isFinite(r.qty) || r.qty <= 0;
+                    const { remaining, isNewItem } = getRowPqtoRemaining(r);
+                    const exceedsPqto = requestType === 'PR' && !isNewItem && r.qty > remaining;
+                    const matchedStock =
+                      requestType === 'ISS'
+                        ? stock.find((s) => s.itemCode.trim().toLowerCase() === r.itemCode.trim().toLowerCase())
+                        : undefined;
+                    const availableStock = matchedStock ? matchedStock.availableStock : 0;
+                    const rowHasError = invalidQty || exceedsPqto;
+
+                    return (
+                    <tr key={r.id} className={rowHasError ? 'bg-[#fce8e6]' : 'bg-white'}>
                       <td className="p-1 border-r border-[#e5e8ec]">
                         <select
                           value=""
@@ -593,6 +642,49 @@ export function NewRequestModal({
                           className="w-full px-2 py-1.5 text-xs bg-transparent focus:outline-none"
                         />
                       </td>
+                      <td className="px-2 py-1 border-r border-[#e5e8ec] text-center whitespace-nowrap">
+                        {invalidQty ? (
+                          <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-[2px] bg-[#fce8e6] text-[#c5221f] border border-[#f5c2c0]">
+                            Invalid Qty
+                          </span>
+                        ) : requestType === 'PR' ? (
+                          exceedsPqto ? (
+                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-[2px] bg-[#fce8e6] text-[#c5221f] border border-[#f5c2c0]">
+                              Exceeds PQTO (Rem: {remaining})
+                            </span>
+                          ) : isNewItem ? (
+                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-[2px] bg-[#fef7e0] text-[#b06000] border border-[#f6dfa4]">
+                              New Item (BOQ)
+                            </span>
+                          ) : (
+                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-[2px] bg-[#e6f4ea] text-[#137333] border border-[#b7e1c4]">
+                              OK (Rem: {remaining})
+                            </span>
+                          )
+                        ) : requestType === 'ISS' ? (
+                          !r.itemCode.trim() ? (
+                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold rounded-[2px] bg-[#f1f3f4] text-[#5f6368] border border-[#dadce0]">
+                              Pending Code
+                            </span>
+                          ) : availableStock >= r.qty ? (
+                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-[2px] bg-[#e6f4ea] text-[#137333] border border-[#b7e1c4]">
+                              In Stock ({availableStock})
+                            </span>
+                          ) : availableStock > 0 ? (
+                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-[2px] bg-[#fef7e0] text-[#b06000] border border-[#f6dfa4]">
+                              Short Stock ({availableStock})
+                            </span>
+                          ) : (
+                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-[2px] bg-[#fef7e0] text-[#b06000] border border-[#f6dfa4]">
+                              Out of Stock (0)
+                            </span>
+                          )
+                        ) : (
+                          <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-[2px] bg-[#e6f4ea] text-[#137333] border border-[#b7e1c4]">
+                            OK
+                          </span>
+                        )}
+                      </td>
                       <td className="p-1 text-center">
                         <button
                           type="button"
@@ -604,7 +696,8 @@ export function NewRequestModal({
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
