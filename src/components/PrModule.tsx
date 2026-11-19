@@ -298,16 +298,26 @@ export function PrModule({
           <div className="flex flex-wrap gap-1">
             {filteredPqtoLookup.map((it) => {
               const rem = Math.max(0, it.pqtoQty - it.prOrderedQty);
+              const fullyOrdered = rem === 0;
               return (
                 <button
                   key={it.boqItemId}
                   type="button"
                   onClick={() => copyFromPqtoItem(it)}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-white hover:bg-[#e7f1ff] border border-[#b9c0c8] rounded-[2px] text-[11px] text-[#1f2328] cursor-pointer"
+                  title={fullyOrdered ? 'All planned units already ordered. Go to Withdrawal (ISS) to issue from warehouse stock.' : `${rem} ${it.pqtoUom} remaining in project budget`}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 border rounded-[2px] text-[11px] cursor-pointer ${
+                    fullyOrdered
+                      ? 'bg-[#f4f6f8] border-[#d5dbe2] text-[#9aa0a6] hover:bg-[#eef0f3]'
+                      : 'bg-white hover:bg-[#e7f1ff] border-[#b9c0c8] text-[#1f2328]'
+                  }`}
                 >
-                  <Plus className="w-3 h-3 text-[#0072ed]" />
+                  <Plus className={`w-3 h-3 ${fullyOrdered ? 'text-[#9aa0a6]' : 'text-[#0072ed]'}`} />
                   <span className="font-mono font-semibold">{it.itemCode}</span>
-                  <span className="text-[#5c646d]">({rem} {it.pqtoUom})</span>
+                  {fullyOrdered ? (
+                    <span className="text-[#9aa0a6]">(Fully Ordered — use ISS)</span>
+                  ) : (
+                    <span className="text-[#5c646d]">({rem} {it.pqtoUom})</span>
+                  )}
                 </button>
               );
             })}
@@ -322,7 +332,7 @@ export function PrModule({
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Item Code</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Description</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Assigned Location</th>
-                <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] text-right">Remaining Qty</th>
+                <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] text-right">PQTO Rem. (Budget)</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] text-right">Requested Qty</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">UOM</th>
                 <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Validation</th>
@@ -372,7 +382,9 @@ export function PrModule({
                         <span className="font-semibold text-[#005ec4]">New Item (Approval Req)</span>
                       ) : exceeds ? (
                         <span className="font-semibold text-[#c5221f]">
-                          Exceeds PQTO ({config.blockExceedPqto ? 'Blocked' : 'Warn'})
+                          {it.pqtoQty === 0
+                            ? `Budget exhausted — withdraw from ISS${config.blockExceedPqto ? ' (Blocked)' : ' (Warn)'}`
+                            : `Exceeds budget (${config.blockExceedPqto ? 'Blocked' : 'Warn'})`}
                         </span>
                       ) : (
                         <span className="text-[#137333] font-medium">OK</span>

@@ -4,6 +4,8 @@ import {
   CheckCircle2,
   Columns,
   Copy,
+  Download,
+  FileText,
   Layers,
   Plus,
   Printer,
@@ -104,23 +106,139 @@ export function BoqModule({
   const handleUploadCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const uploadedRow: BoqItem = {
-      id: `boq-up-${Date.now()}`,
-      lineNo: items.length + 1,
-      itemCode: 'MAT-UPL-200',
-      description: `B.I. Flange Weld-Neck Sch-40 - 100mm (${file.name})`,
-      boqUom: 'lot',
-      boqQty: 1,
-      pqtoUom: 'PC/s',
-      pqtoQty: 8,
-      assignedLocation: 'Zone B - Riser Shaft',
-      costCenter: 'CC-MECH-02',
-      remarks: 'Excel/CSV Upload',
+
+    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      notify('Excel files must be saved as CSV first. In Excel: File → Save As → CSV (Comma delimited).');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
+
+      const lines = text.split(/\r?\n/).filter((l) => l.trim());
+      if (lines.length < 2) {
+        notify('CSV file is empty or has only a header row.');
+        e.target.value = '';
+        return;
+      }
+
+      const parseRow = (row: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < row.length; i++) {
+          const ch = row[i];
+          if (ch === '"') {
+            inQuotes = !inQuotes;
+          } else if (ch === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += ch;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const headers = parseRow(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+      const col = (candidates: string[]) => {
+        for (const c of candidates) {
+          const idx = headers.indexOf(c);
+          if (idx !== -1) return idx;
+        }
+        return -1;
+      };
+
+      const ci = col(['itemcode', 'code', 'item']);
+      const cd = col(['description', 'desc', 'itemdescription']);
+      const cbu = col(['boquom', 'boqunit', 'uom']);
+      const cbq = col(['boqqty', 'boqquantity', 'qty']);
+      const cpu = col(['pqtouom', 'pqtounit', 'pquom']);
+      const cpq = col(['pqtoqty', 'pqtoquantity']);
+      const cl = col(['assignedlocation', 'location', 'zone', 'area']);
+      const cc = col(['costcenter', 'cost', 'cc']);
+      const cr = col(['remarks', 'notes', 'note']);
+
+      const newItems: BoqItem[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cells = parseRow(lines[i]);
+        if (cells.every((c) => !c)) continue;
+
+        const itemCode = ci >= 0 ? cells[ci] || '' : cells[0] || '';
+        const description = cd >= 0 ? cells[cd] || '' : cells[1] || '';
+        if (!itemCode && !description) continue;
+
+        const boqUomRaw = cbu >= 0 ? cells[cbu] : cells[2] || '';
+        const boqUom = ['lot', 'm', 'PC/s'].includes(boqUomRaw) ? boqUomRaw : 'lot';
+        const boqQty = Number(cbq >= 0 ? cells[cbq] : cells[3]) || 1;
+        const pqtoUomRaw = cpu >= 0 ? cells[cpu] : cells[4] || '';
+        const pqtoUom = ['PC/s', 'lot', 'm'].includes(pqtoUomRaw) ? pqtoUomRaw : 'PC/s';
+        const pqtoQty = Number(cpq >= 0 ? cells[cpq] : cells[5]) || 0;
+        const assignedLocation = cl >= 0 ? cells[cl] || '' : cells[6] || '';
+        const costCenter = cc >= 0 ? cells[cc] || '' : cells[7] || '';
+        const remarks = cr >= 0 ? cells[cr] || '' : cells[8] || '';
+
+        newItems.push({
+          id: `boq-csv-${Date.now()}-${i}`,
+          lineNo: items.length + newItems.length + 1,
+          itemCode,
+          description,
+          boqUom,
+          boqQty,
+          pqtoUom,
+          pqtoQty,
+          assignedLocation,
+          ...(costCenter ? { costCenter } : {}),
+          ...(remarks ? { remarks } : {}),
+        });
+      }
+
+      if (newItems.length === 0) {
+        notify('No valid rows found in the CSV. Download the template to check the format.');
+        e.target.value = '';
+        return;
+      }
+
+      setItems((prev) => [...prev, ...newItems]);
+      onAddLog('BOQ', 'BOQ-2026-001', 'BOQ Upload', `Imported ${newItems.length} item(s) from ${file.name}.`);
+      notify(`Imported ${newItems.length} item(s) from "${file.name}".`);
+      e.target.value = '';
     };
-    setItems([...items, uploadedRow]);
-    onAddLog('BOQ', 'BOQ-2026-001', 'BOQ Upload', `Uploaded ${file.name} into BOQ interphase.`);
-    notify(`Uploaded "${file.name}".`);
-    e.target.value = '';
+
+    reader.readAsText(file);
+  };
+
+  const handleAddMaterialRow = () => {
+    setItems([
+      ...items,
+      {
+        id: `boq-mat-${Date.now()}`,
+        lineNo: items.length + 1,
+        itemCode: '',
+        description: '',
+        boqUom: 'PC/s',
+        boqQty: 1,
+        pqtoUom: 'PC/s',
+        pqtoQty: 1,
+        assignedLocation: '',
+      },
+    ]);
+  };
+
+  const handleDownloadTemplate = () => {
+    const header = 'itemCode,description,boqUom,boqQty,pqtoUom,pqtoQty,assignedLocation,costCenter,remarks';
+    const sample = 'MAT-VLV-01,"Gate Valve, Flanged PN16 - 100mm",PC/s,4,PC/s,4,Zone A - Pump Room,CC-MECH-01,Sample Item';
+    const blob = new Blob([`${header}\n${sample}\n`], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'BOQ_Import_Template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleAddBlankRow = () => {
@@ -226,9 +344,25 @@ export function BoqModule({
           </button>
 
           <label className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer">
-            <Upload className="w-3 h-3 text-[#137333]" /> Upload Excel/CSV
-            <input type="file" accept=".csv,.xlsx,.xls" onChange={handleUploadCsv} className="hidden" />
+            <Upload className="w-3 h-3 text-[#137333]" /> Upload CSV
+            <input type="file" accept=".csv" onChange={handleUploadCsv} className="hidden" />
           </label>
+
+          <button
+            onClick={handleDownloadTemplate}
+            className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer"
+            title="Download a sample CSV template to fill in your materials list"
+          >
+            <Download className="w-3 h-3 text-[#137333]" /> Download CSV Template
+          </button>
+
+          <button
+            onClick={handleAddMaterialRow}
+            className="inline-flex items-center gap-1 px-2 py-1 bg-[#e7f1ff] hover:bg-[#d0e6ff] text-[#004a99] border border-[#b3d1ff] rounded-[2px] text-[11px] font-semibold cursor-pointer"
+            title="Add a blank material row to fill in manually"
+          >
+            <FileText className="w-3 h-3" /> Add Material Item
+          </button>
 
           {hasLegacyFittings && (
             <button
