@@ -1,8 +1,5 @@
 import { useState } from 'react';
 import {
-  FileCheck,
-  FileSpreadsheet,
-  FileText,
   Printer,
   RotateCcw,
   X,
@@ -28,7 +25,7 @@ const getStoredPrintCount = (key: string): number => {
 };
 
 export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate = 'po' }: PoPrintModalProps) {
-  const [docTemplate, setDocTemplate] = useState<DocTemplate>(initialTemplate);
+  const docTemplate = initialTemplate;
   const [currency, setCurrency] = useState<'GBP' | 'PHP'>('GBP');
   const [printCounts, setPrintCounts] = useState<Record<string, number>>({});
   const [generatedDate] = useState(() => {
@@ -97,6 +94,26 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
           </div>
 
           <div className="flex items-center gap-2">
+            <span
+              className={`px-2 py-0.5 rounded-[2px] text-[11px] font-mono font-bold uppercase border ${
+                isCopy
+                  ? 'bg-amber-900/50 text-amber-300 border-amber-500/50'
+                  : 'bg-emerald-900/50 text-emerald-300 border-emerald-500/50'
+              }`}
+            >
+              {isCopy ? `Copy #${copyNumber}: COPY` : '1st Print: ORIGINAL'}
+            </span>
+            {isCopy && (
+              <button
+                type="button"
+                onClick={handleResetOriginal}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-[#2b2f36] hover:bg-[#383d46] text-slate-300 hover:text-white border border-[#495057] rounded-[2px] text-xs cursor-pointer"
+                title="Reset copy counter back to 1st Original"
+              >
+                <RotateCcw className="w-3 h-3" /> Reset Original
+              </button>
+            )}
+
             {/* Currency selector */}
             <select
               value={currency}
@@ -140,69 +157,6 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
             >
               <X className="w-4 h-4" />
             </button>
-          </div>
-        </div>
-
-        {/* Document Format Tabs Strip (Visually Prominent) */}
-        <div className="no-print bg-[#1a1d21] px-4 py-2 flex flex-wrap items-center justify-between border-b border-[#32363e] text-xs shrink-0 gap-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mr-1">
-              Select Document Form:
-            </span>
-            <button
-              type="button"
-              onClick={() => setDocTemplate('po')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] font-semibold text-xs transition-all cursor-pointer ${
-                docTemplate === 'po'
-                  ? 'bg-[#0072ed] text-white shadow-xs'
-                  : 'bg-[#2b2f36] text-slate-300 hover:text-white hover:bg-[#383d46]'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" /> 1. Purchase Order Document
-            </button>
-            <button
-              type="button"
-              onClick={() => setDocTemplate('acknowledgement')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] font-semibold text-xs transition-all cursor-pointer ${
-                docTemplate === 'acknowledgement'
-                  ? 'bg-[#0072ed] text-white shadow-xs'
-                  : 'bg-[#2b2f36] text-slate-300 hover:text-white hover:bg-[#383d46]'
-              }`}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" /> 2. Order Acknowledgement
-            </button>
-            <button
-              type="button"
-              onClick={() => setDocTemplate('receipt')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] font-semibold text-xs transition-all cursor-pointer ${
-                docTemplate === 'receipt'
-                  ? 'bg-[#0072ed] text-white shadow-xs'
-                  : 'bg-[#2b2f36] text-slate-300 hover:text-white hover:bg-[#383d46]'
-              }`}
-            >
-              <FileCheck className="w-3.5 h-3.5" /> 3. Invoice / Order Receipt
-            </button>
-          </div>
-          <div className="flex items-center gap-2 text-[11px] font-mono">
-            <span
-              className={`px-2 py-0.5 rounded-[2px] font-bold uppercase border ${
-                isCopy
-                  ? 'bg-amber-900/50 text-amber-300 border-amber-500/50'
-                  : 'bg-emerald-900/50 text-emerald-300 border-emerald-500/50'
-              }`}
-            >
-              {isCopy ? `Copy #${copyNumber}: COPY` : '1st Print: ORIGINAL'}
-            </span>
-            {isCopy && (
-              <button
-                type="button"
-                onClick={handleResetOriginal}
-                className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#2b2f36] hover:bg-[#383d46] text-slate-300 hover:text-white border border-[#495057] rounded-[2px] cursor-pointer"
-                title="Reset copy counter back to 1st Original"
-              >
-                <RotateCcw className="w-3 h-3" /> Reset Original
-              </button>
-            )}
           </div>
         </div>
 
