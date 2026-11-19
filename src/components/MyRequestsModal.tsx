@@ -18,6 +18,9 @@ import {
   AttachmentCellButton,
   AttachmentViewerModal,
   StatusBadge,
+  getPoStageLabel,
+  getPrStageLabel,
+  getWithdrawalStageLabel,
 } from './SharedUI';
 
 type UserRole = 'Applicant' | 'Approver' | 'Warehouse Admin';
@@ -184,31 +187,38 @@ export function MyRequestsModal({
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Items</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Files</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Created</th>
-                      <th className="px-2.5 py-1.5 font-semibold">Status</th>
+                      <th className="px-2.5 py-1.5 font-semibold">Status &amp; Delivery Stage</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#d5dbe2]">
-                    {filteredPrs.map((pr, idx) => (
-                      <tr key={pr.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
-                        <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{pr.prNo}</td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.applicant}</td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
-                          <span className="font-mono">{pr.refDocNo}</span>
-                          <span className="text-[#5c646d] ml-1.5 text-[11px]">({pr.pqtoNo})</span>
-                        </td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.items.length} line(s)</td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
-                          <AttachmentCellButton
-                            attachments={pr.attachments}
-                            onOpen={() => setViewingAttachments({ docNo: pr.prNo, attachments: pr.attachments })}
-                          />
-                        </td>
-                        <td className="px-2.5 py-1.5 font-mono text-[#5c646d] border-r border-[#e5e8ec]">{pr.createdAt}</td>
-                        <td className="px-2.5 py-1.5">
-                          <StatusBadge status={pr.status} />
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredPrs.map((pr, idx) => {
+                      const linkedPo = pos.find((p) => p.prNo === pr.prNo);
+                      const stage = getPrStageLabel(pr.status, linkedPo);
+                      return (
+                        <tr key={pr.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
+                          <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{pr.prNo}</td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.applicant}</td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
+                            <span className="font-mono">{pr.refDocNo}</span>
+                            <span className="text-[#5c646d] ml-1.5 text-[11px]">({pr.pqtoNo})</span>
+                          </td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.items.length} line(s)</td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
+                            <AttachmentCellButton
+                              attachments={pr.attachments}
+                              onOpen={() => setViewingAttachments({ docNo: pr.prNo, attachments: pr.attachments })}
+                            />
+                          </td>
+                          <td className="px-2.5 py-1.5 font-mono text-[#5c646d] border-r border-[#e5e8ec]">{pr.createdAt}</td>
+                          <td className="px-2.5 py-1.5 space-y-0.5">
+                            <StatusBadge status={pr.status} />
+                            <div className={`text-[10.5px] font-medium ${stage.colorClass}`}>
+                              {stage.label}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -243,35 +253,41 @@ export function MyRequestsModal({
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] text-right">Qty</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Files</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Date</th>
-                      <th className="px-2.5 py-1.5 font-semibold">Status</th>
+                      <th className="px-2.5 py-1.5 font-semibold">Status &amp; Issuance Stage</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#d5dbe2]">
-                    {filteredWithdrawals.map((w, idx) => (
-                      <tr key={w.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
-                        <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{w.wdNo}</td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{w.requestedBy}</td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
-                          <span className="font-mono font-semibold">{w.items[0]?.itemCode}</span>
-                          {w.items[0]?.description && (
-                            <span className="text-[#5c646d] ml-1.5 text-[11px]">{w.items[0].description}</span>
-                          )}
-                        </td>
-                        <td className="px-2.5 py-1.5 text-right font-semibold border-r border-[#e5e8ec]">
-                          {w.items[0]?.requestedQty} {w.items[0]?.uom}
-                        </td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
-                          <AttachmentCellButton
-                            attachments={w.attachments}
-                            onOpen={() => setViewingAttachments({ docNo: w.wdNo, attachments: w.attachments })}
-                          />
-                        </td>
-                        <td className="px-2.5 py-1.5 font-mono text-[#5c646d] border-r border-[#e5e8ec]">{w.performedAt}</td>
-                        <td className="px-2.5 py-1.5">
-                          <StatusBadge status={w.status} />
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredWithdrawals.map((w, idx) => {
+                      const stage = getWithdrawalStageLabel(w.status);
+                      return (
+                        <tr key={w.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
+                          <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{w.wdNo}</td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{w.requestedBy}</td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
+                            <span className="font-mono font-semibold">{w.items[0]?.itemCode}</span>
+                            {w.items[0]?.description && (
+                              <span className="text-[#5c646d] ml-1.5 text-[11px]">{w.items[0].description}</span>
+                            )}
+                          </td>
+                          <td className="px-2.5 py-1.5 text-right font-semibold border-r border-[#e5e8ec]">
+                            {w.items[0]?.requestedQty} {w.items[0]?.uom}
+                          </td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
+                            <AttachmentCellButton
+                              attachments={w.attachments}
+                              onOpen={() => setViewingAttachments({ docNo: w.wdNo, attachments: w.attachments })}
+                            />
+                          </td>
+                          <td className="px-2.5 py-1.5 font-mono text-[#5c646d] border-r border-[#e5e8ec]">{w.performedAt}</td>
+                          <td className="px-2.5 py-1.5 space-y-0.5">
+                            <StatusBadge status={w.status} />
+                            <div className={`text-[10.5px] font-medium ${stage.colorClass}`}>
+                              {stage.label}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -305,29 +321,35 @@ export function MyRequestsModal({
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Vendor</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Files</th>
                       <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Comments</th>
-                      <th className="px-2.5 py-1.5 font-semibold">Status</th>
+                      <th className="px-2.5 py-1.5 font-semibold">Status &amp; Delivery Stage</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#d5dbe2]">
-                    {filteredPos.map((po, idx) => (
-                      <tr key={po.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
-                        <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{po.poNo}</td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{po.applicant}</td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{po.vendor}</td>
-                        <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
-                          <AttachmentCellButton
-                            attachments={po.attachments}
-                            onOpen={() => setViewingAttachments({ docNo: po.poNo, attachments: po.attachments })}
-                          />
-                        </td>
-                        <td className="px-2.5 py-1.5 text-[#c5221f] border-r border-[#e5e8ec]">
-                          {po.rejectionComments || '—'}
-                        </td>
-                        <td className="px-2.5 py-1.5">
-                          <StatusBadge status={po.status} />
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredPos.map((po, idx) => {
+                      const stage = getPoStageLabel(po.status);
+                      return (
+                        <tr key={po.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
+                          <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{po.poNo}</td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{po.applicant}</td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{po.vendor}</td>
+                          <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
+                            <AttachmentCellButton
+                              attachments={po.attachments}
+                              onOpen={() => setViewingAttachments({ docNo: po.poNo, attachments: po.attachments })}
+                            />
+                          </td>
+                          <td className="px-2.5 py-1.5 text-[#c5221f] border-r border-[#e5e8ec]">
+                            {po.rejectionComments || '—'}
+                          </td>
+                          <td className="px-2.5 py-1.5 space-y-0.5">
+                            <StatusBadge status={po.status} />
+                            <div className={`text-[10.5px] font-medium ${stage.colorClass}`}>
+                              {stage.label}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -352,3 +374,4 @@ export function MyRequestsModal({
     </div>
   );
 }
+

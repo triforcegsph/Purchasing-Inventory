@@ -14,7 +14,7 @@ import type {
   PrRecord,
   RequiredFieldConfig,
 } from '../types/erp';
-import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge, SummaryReportModal } from './SharedUI';
+import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge, SummaryReportModal, getPoStageLabel } from './SharedUI';
 import { PoPrintModal } from './PoPrintModal';
 
 interface PoModuleProps {
@@ -316,8 +316,11 @@ export function PoModule({
                       onOpen={() => setViewingAttachments({ docNo: po.poNo, attachments: po.attachments })}
                     />
                   </td>
-                  <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
+                  <td className="px-2.5 py-1.5 border-r border-[#e5e8ec] space-y-0.5">
                     <StatusBadge status={po.status} />
+                    <div className={`text-[10px] font-medium ${getPoStageLabel(po.status).colorClass}`}>
+                      {getPoStageLabel(po.status).label}
+                    </div>
                   </td>
                   <td className="px-2.5 py-1.5 text-[#c5221f] max-w-[180px] truncate border-r border-[#e5e8ec]" title={po.rejectionComments}>
                     {po.rejectionComments || '—'}

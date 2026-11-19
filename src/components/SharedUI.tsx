@@ -30,6 +30,57 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
+export function getPoStageLabel(status: string): { label: string; colorClass: string } {
+  switch (status) {
+    case 'Pending Approval':
+      return { label: 'Waiting for Project Manager Approval', colorClass: 'text-[#8d6e00]' };
+    case 'Returned to Applicant':
+      return { label: 'Returned to Applicant — Revision Needed', colorClass: 'text-[#c5221f]' };
+    case 'Approved':
+      return { label: 'Sent to Receiver (GRN) • In Transit / On Delivery', colorClass: 'text-[#005ec4]' };
+    case 'Partially Received':
+      return { label: 'On Delivery — Partially Received at Warehouse', colorClass: 'text-[#b06000]' };
+    case 'Completed':
+      return { label: 'Delivered & Received in Full', colorClass: 'text-[#137333]' };
+    default:
+      return { label: status, colorClass: 'text-[#495057]' };
+  }
+}
+
+export function getPrStageLabel(
+  status: string,
+  linkedPo?: { poNo: string; status: string }
+): { label: string; colorClass: string } {
+  if (linkedPo) {
+    const poStage = getPoStageLabel(linkedPo.status);
+    return {
+      label: `${linkedPo.poNo}: ${poStage.label}`,
+      colorClass: poStage.colorClass,
+    };
+  }
+  switch (status) {
+    case 'Draft':
+      return { label: 'Saved as Draft (Not Submitted)', colorClass: 'text-[#5c646d]' };
+    case 'Pending Approval':
+      return { label: 'Waiting for Project Manager Approval', colorClass: 'text-[#8d6e00]' };
+    case 'Approved':
+      return { label: 'Approved — Ready to Convert to PO', colorClass: 'text-[#137333]' };
+    case 'Rejected':
+      return { label: 'Rejected — Returned to Applicant', colorClass: 'text-[#c5221f]' };
+    case 'Converted to PO':
+      return { label: 'Converted to Purchase Order', colorClass: 'text-[#005ec4]' };
+    default:
+      return { label: status, colorClass: 'text-[#495057]' };
+  }
+}
+
+export function getWithdrawalStageLabel(status: string): { label: string; colorClass: string } {
+  if (status === 'With Stock') {
+    return { label: 'Issued to Site (Stock Deducted)', colorClass: 'text-[#137333]' };
+  }
+  return { label: 'Backordered — Awaiting Warehouse Stock', colorClass: 'text-[#c5221f]' };
+}
+
 interface AttachmentUploaderProps {
   attachments: FileAttachment[];
   onAdd: (file: FileAttachment) => void;
