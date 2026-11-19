@@ -79,7 +79,7 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    group: 'Process Flow (Step 1 → 6)',
+    group: 'Procurement & Inventory',
     items: [
       { key: 'boq', code: 'BOQ', step: 1, label: 'Bill of Quantities', icon: FileSpreadsheet },
       { key: 'pqto', code: 'PQTO', step: 2, label: 'Project Qty Take-Off', icon: Calculator },
