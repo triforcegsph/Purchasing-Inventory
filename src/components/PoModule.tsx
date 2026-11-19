@@ -84,10 +84,6 @@ export function PoModule({
       setErrorMsg('IAAS2 Reference Number is required.');
       return;
     }
-    if (config.attachments && attachments.length === 0) {
-      setErrorMsg('At least 1 attachment (PDF, JPG, etc.) is required.');
-      return;
-    }
 
     const poNo = `PO-2026-${Math.floor(Math.random() * 500 + 460)}`;
     const newPo: PoRecord = {
@@ -262,7 +258,8 @@ export function PoModule({
         <div className="p-3">
           <AttachmentUploader
             attachments={attachments}
-            required={config.attachments}
+            required={false}
+            label="Attachments (PDF, JPG, PNG, XLSX) — Optional"
             onAdd={(f) => setAttachments((prev) => [...prev, f])}
             onRemove={(id) => setAttachments((prev) => prev.filter((a) => a.id !== id))}
           />
