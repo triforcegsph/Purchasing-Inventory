@@ -58,7 +58,9 @@ export function TransfersAndSettingsModule({
   businessUnit = 'PROJ-TWRB',
   activeRole,
 }: TransfersAndSettingsProps) {
-  const canManageInventory = activeRole === 'Warehouse Manager' || activeRole === 'Admin';
+  const canManageInventory =
+    activeRole === 'Warehouse Manager' || activeRole === 'Admin' || activeRole === 'Purchaser';
+  const isPurchaser = activeRole === 'Purchaser';
   // Local SMTP state if parent doesn't provide setter
   const [localSmtp, setLocalSmtp] = useState<SmtpConfig>(
     smtpConfig || {
@@ -88,7 +90,9 @@ export function TransfersAndSettingsModule({
   };
 
   // Section tab state
-  const [activeSection, setActiveSection] = useState<'overview' | 'stock' | 'transfers' | 'rules'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'stock' | 'transfers' | 'rules'>(
+    isPurchaser ? 'stock' : 'overview'
+  );
 
   // Stock Transfer state
   const [type, setType] = useState<'Stock Transfer' | 'Excess Return to Warehouse'>('Excess Return to Warehouse');
@@ -245,12 +249,17 @@ export function TransfersAndSettingsModule({
       {/* Clean Sub-Navigation Tabs */}
       <div className="bg-white border border-[#cfd5dc] rounded-[2px] p-1.5 flex flex-wrap items-center gap-1.5">
         {(
-          [
-            { key: 'overview', label: 'Cost & Movements' },
-            { key: 'stock', label: `Inventory Stock (${stock.length})` },
-            { key: 'transfers', label: `Stock Transfers (${transfers.length})` },
-            { key: 'rules', label: 'Rules & SMTP' },
-          ] as const
+          isPurchaser
+            ? ([
+                { key: 'stock', label: `Inventory Stock (${stock.length})` },
+                { key: 'overview', label: 'Cost & Movements' },
+              ] as const)
+            : ([
+                { key: 'overview', label: 'Cost & Movements' },
+                { key: 'stock', label: `Inventory Stock (${stock.length})` },
+                { key: 'transfers', label: `Stock Transfers (${transfers.length})` },
+                { key: 'rules', label: 'Rules & SMTP' },
+              ] as const)
         ).map((tab) => (
           <button
             key={tab.key}

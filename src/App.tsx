@@ -115,7 +115,7 @@ const ROLE_MODULES: Record<UserRole, ModuleKey[]> = {
   'REQ Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'PO Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'Warehouse Manager': ['receiving', 'withdrawal', 'transfers', 'po', 'tracking', 'logs'],
-  'Purchaser': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
+  'Purchaser': ['boq', 'pqto', 'pr', 'po', 'transfers', 'tracking', 'logs'],
   'Admin': ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'tracking', 'logs'],
 };
 
