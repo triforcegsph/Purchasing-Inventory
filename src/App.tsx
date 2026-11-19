@@ -58,6 +58,7 @@ import { WithdrawalModule } from './components/WithdrawalModule';
 import { TransfersAndSettingsModule } from './components/TransfersAndSettingsModule';
 import { LogsModule } from './components/LogsModule';
 import { NewRequestModal } from './components/NewRequestModal';
+import { MyRequestsModal } from './components/MyRequestsModal';
 
 interface NavGroup {
   group: string;
@@ -191,6 +192,7 @@ export function App() {
   const [selectedPrForPo, setSelectedPrForPo] = useState<string | undefined>(undefined);
   const [selectedPoForReceiving, setSelectedPoForReceiving] = useState<string | undefined>(undefined);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
+  const [showMyRequestsModal, setShowMyRequestsModal] = useState(false);
 
   const handleProjectChange = (newProj: string) => {
     setBusinessUnit(newProj);
@@ -493,7 +495,18 @@ export function App() {
           </form>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {/* View All My Requests Button */}
+          <button
+            type="button"
+            onClick={() => setShowMyRequestsModal(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#181a1e] hover:bg-[#32363e] text-slate-100 border border-[#3c414a] text-xs font-semibold rounded-xs cursor-pointer"
+            title="View all submitted requests (PRQ, ISS, POE) in one place"
+          >
+            <ClipboardList className="w-3.5 h-3.5 text-[#4da3ff]" />
+            <span>My Requests ({prs.length + withdrawals.length + pos.length})</span>
+          </button>
+
           {/* Quick New Request Form Button */}
           <button
             type="button"
@@ -867,6 +880,22 @@ export function App() {
             }
           }}
           onClose={() => setShowNewRequestModal(false)}
+        />
+      )}
+
+      {showMyRequestsModal && (
+        <MyRequestsModal
+          activeRole={activeRole}
+          prs={prs}
+          pos={pos}
+          withdrawals={withdrawals}
+          onNavigate={(mod) => {
+            if (ROLE_MODULES[activeRole].includes(mod)) {
+              setActiveModule(mod);
+            }
+          }}
+          onOpenNewRequest={() => setShowNewRequestModal(true)}
+          onClose={() => setShowMyRequestsModal(false)}
         />
       )}
     </div>
