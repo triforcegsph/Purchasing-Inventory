@@ -139,7 +139,7 @@ export function BoqPrintModal({ items, boqStatus, onClose }: BoqPrintModalProps)
               <div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-[15px] font-bold tracking-tight">TRIFORCE GLOBAL SOLUTIONS (TRIFORCEGS)</div>
+                    <div className="text-[15px] font-bold tracking-tight">PURCHASING &amp; INVENTORY SYSTEM</div>
                     <div className="text-[13px] font-bold flex items-center gap-2">
                       <span>Bill of Quantities (BOQ) Specification</span>
                       <span

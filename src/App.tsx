@@ -497,7 +497,7 @@ export function App() {
 
           {/* Brand Title */}
           <span className="text-xs font-semibold tracking-wide uppercase text-slate-200">
-            TRIFORCEGS • Purchasing &amp; Inventory System
+            Purchasing &amp; Inventory System
           </span>
 
           {/* SunSystems Function Code Quick-Launch */}

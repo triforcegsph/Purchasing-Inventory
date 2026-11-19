@@ -77,7 +77,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         <div className="flex items-center gap-2.5">
           <Building2 className="w-4 h-4 text-[#4da3ff]" />
           <span className="text-xs font-bold uppercase tracking-wider text-slate-100">
-            TRIFORCEGS • Purchasing &amp; Inventory System
+            Purchasing &amp; Inventory System
           </span>
         </div>
         <span className="text-[11px] font-mono text-slate-400">
@@ -90,7 +90,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         <div className="w-full max-w-md bg-white border border-[#cfd5dc] rounded-[2px] shadow-md p-6 space-y-5">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wider text-[#005ec4] mb-1">
-              Triforce Global Solutions
+              Purchasing &amp; Inventory System
             </div>
             <h1 className="text-lg font-bold text-[#1f2328]">
               System Sign In
@@ -160,7 +160,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
       {/* Footer */}
       <footer className="bg-[#dfe3e8] border-t border-[#cfd5dc] px-4 py-1.5 text-[11px] text-slate-600 flex items-center justify-between">
-        <span>Triforce Global Solutions (TRIFORCEGS) • Purchasing &amp; Inventory System</span>
+        <span>Purchasing &amp; Inventory System</span>
         <span className="font-mono">RBAC Enabled</span>
       </footer>
     </div>

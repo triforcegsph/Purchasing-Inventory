@@ -195,7 +195,7 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 <div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-[15px] font-bold tracking-tight">TRIFORCE GLOBAL SOLUTIONS (TRIFORCEGS)</div>
+                      <div className="text-[15px] font-bold tracking-tight">PURCHASING &amp; INVENTORY SYSTEM</div>
                       <div className="text-[13px] font-bold flex items-center gap-2">
                         <span>Purchase Order Document</span>
                         <span
@@ -244,13 +244,13 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 <div className="grid grid-cols-2 gap-8 pt-2 text-[11px]">
                   <div>
                     <div className="font-bold mb-0.5">Invoice To:</div>
-                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Purchasing &amp; Inventory System</div>
                     <div>Corporate Headquarters</div>
                     <div>Procurement &amp; Logistics Division</div>
                   </div>
                   <div>
                     <div className="font-bold mb-0.5">Deliver To:</div>
-                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Purchasing &amp; Inventory System</div>
                     <div>Corporate Headquarters</div>
                     <div>Procurement &amp; Logistics Division</div>
                   </div>
@@ -362,7 +362,7 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 <div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-[15px] font-bold tracking-tight">TRIFORCE GLOBAL SOLUTIONS (TRIFORCEGS)</div>
+                      <div className="text-[15px] font-bold tracking-tight">PURCHASING &amp; INVENTORY SYSTEM</div>
                       <div className="text-[13px] font-bold flex items-center gap-2">
                         <span>Sales Order Acknowledgement</span>
                         <span
@@ -399,12 +399,12 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 <div className="grid grid-cols-2 gap-8 text-[11px] pt-2">
                   <div>
                     <div className="font-bold">Acknowledgement Address:</div>
-                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Purchasing &amp; Inventory System</div>
                     <div>Corporate Headquarters, Procurement Division</div>
                   </div>
                   <div>
                     <div className="font-bold">Delivery Address:</div>
-                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Purchasing &amp; Inventory System</div>
                     <div>Corporate Headquarters, Procurement Division</div>
                   </div>
                 </div>
@@ -463,7 +463,7 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 {/* Header */}
                 <div className="flex justify-between items-baseline">
                   <div className="flex items-center gap-3">
-                    <span className="text-[16px] font-bold tracking-tight">TRIFORCE GLOBAL SOLUTIONS (TRIFORCEGS)</span>
+                    <span className="text-[16px] font-bold tracking-tight">PURCHASING &amp; INVENTORY SYSTEM</span>
                     <span
                       className={`px-2 py-0.5 text-[11px] font-black uppercase tracking-widest border ${
                         isCopy
@@ -484,7 +484,7 @@ export function PoPrintModal({ po, allPos, onSelectPo, onClose, initialTemplate 
                 {/* Company Address & Date */}
                 <div className="flex justify-between items-start pt-2 text-[11px]">
                   <div className="space-y-0.5">
-                    <div>Triforce Global Solutions, Inc.</div>
+                    <div>Purchasing &amp; Inventory System</div>
                     <div>Corporate Headquarters</div>
                     <div>Procurement &amp; Logistics Division</div>
                     <div>Metro Manila</div>
