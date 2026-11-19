@@ -201,7 +201,7 @@ export function PrModule({
       <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
         <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
-            PRQ — Purchase Requisition Entry
+            PR — Purchase Requisition Entry
           </span>
           <div className="flex flex-wrap items-center gap-1.5">
             <label className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer">
@@ -304,7 +304,7 @@ export function PrModule({
                   key={it.boqItemId}
                   type="button"
                   onClick={() => copyFromPqtoItem(it)}
-                  title={fullyOrdered ? 'All planned units already ordered. Go to Withdrawal (ISS) to issue from warehouse stock.' : `${rem} ${it.pqtoUom} remaining in project budget`}
+                  title={fullyOrdered ? 'All planned units already ordered. Go to Withdrawal (WD) to issue from warehouse stock.' : `${rem} ${it.pqtoUom} remaining in project budget`}
                   className={`inline-flex items-center gap-1 px-2 py-0.5 border rounded-[2px] text-[11px] cursor-pointer ${
                     fullyOrdered
                       ? 'bg-[#f4f6f8] border-[#d5dbe2] text-[#9aa0a6] hover:bg-[#eef0f3]'
@@ -314,7 +314,7 @@ export function PrModule({
                   <Plus className={`w-3 h-3 ${fullyOrdered ? 'text-[#9aa0a6]' : 'text-[#0072ed]'}`} />
                   <span className="font-mono font-semibold">{it.itemCode}</span>
                   {fullyOrdered ? (
-                    <span className="text-[#9aa0a6]">(Fully Ordered — use ISS)</span>
+                    <span className="text-[#9aa0a6]">(Fully Ordered — use WD)</span>
                   ) : (
                     <span className="text-[#5c646d]">({rem} {it.pqtoUom})</span>
                   )}
@@ -383,7 +383,7 @@ export function PrModule({
                       ) : exceeds ? (
                         <span className="font-semibold text-[#c5221f]">
                           {it.pqtoQty === 0
-                            ? `Budget exhausted — withdraw from ISS${config.blockExceedPqto ? ' (Blocked)' : ' (Warn)'}`
+                            ? `Budget exhausted — withdraw from WD${config.blockExceedPqto ? ' (Blocked)' : ' (Warn)'}`
                             : `Exceeds budget (${config.blockExceedPqto ? 'Blocked' : 'Warn'})`}
                         </span>
                       ) : (

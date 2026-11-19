@@ -172,7 +172,7 @@ export function TrackingModule({
       }
     }
     const step5: PipelineStep = {
-      label: '5. GRN Delivery',
+      label: '5. Receiving (RCV)',
       docNo: step5Doc,
       detail: step5Detail,
       state: step5State,
@@ -291,7 +291,7 @@ export function TrackingModule({
               { key: 'ALL', label: `All Requests (${countByCategory.ALL})` },
               { key: 'PR', label: `1. REQ Approval (${countByCategory.PR})` },
               { key: 'PO', label: `2. PO Approval (${countByCategory.PO})` },
-              { key: 'DELIVERY', label: `3. On Delivery / GRN (${countByCategory.DELIVERY})` },
+              { key: 'DELIVERY', label: `3. On Delivery / RCV (${countByCategory.DELIVERY})` },
               { key: 'DONE', label: `4. Completed (${countByCategory.DONE})` },
             ].map((tab) => (
               <button
@@ -377,7 +377,7 @@ export function TrackingModule({
                       onClick={() => onNavigate('pr')}
                       className="px-2 py-0.5 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] rounded-[2px] text-[11px] font-semibold text-[#005ec4] cursor-pointer"
                     >
-                      Open PRQ
+                      Open PR
                     </button>
                   )}
                   {chain.category === 'PO' && (
@@ -386,7 +386,7 @@ export function TrackingModule({
                       onClick={() => onNavigate('po')}
                       className="px-2 py-0.5 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] rounded-[2px] text-[11px] font-semibold text-[#005ec4] cursor-pointer"
                     >
-                      Open POE
+                      Open PO
                     </button>
                   )}
                   {chain.category === 'DELIVERY' && (
@@ -395,7 +395,7 @@ export function TrackingModule({
                       onClick={() => onNavigate('receiving')}
                       className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#0072ed] hover:bg-[#005ec4] text-white rounded-[2px] text-[11px] font-semibold cursor-pointer"
                     >
-                      <Truck className="w-3 h-3" /> Track / Receive (GRN)
+                      <Truck className="w-3 h-3" /> Track / Receive (RCV)
                     </button>
                   )}
                 </div>

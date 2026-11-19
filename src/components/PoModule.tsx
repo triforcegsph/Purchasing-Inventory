@@ -150,7 +150,7 @@ export function PoModule({
       <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
         <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
-            POE — Purchase Order Entry
+            PO — Purchase Order Entry
           </span>
           <div className="flex items-center gap-1.5">
             <button

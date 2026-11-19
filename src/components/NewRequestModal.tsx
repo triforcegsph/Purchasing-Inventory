@@ -387,8 +387,8 @@ export function NewRequestModal({
                 }`}
               >
                 {activeRole === 'Warehouse Manager'
-                  ? 'Stock Replenishment Request (PRQ)'
-                  : 'Purchase Requisition (PRQ)'}
+                  ? 'Stock Replenishment Request (PR)'
+                  : 'Purchase Requisition (PR)'}
               </button>
             )}
             {roleCfg.allowedTypes.includes('ISS') && (
@@ -401,7 +401,7 @@ export function NewRequestModal({
                     : 'bg-[#f8f9fa] text-[#1f2328] hover:bg-[#eef0f3]'
                 }`}
               >
-                Material Withdrawal / Issuance (ISS)
+                Material Withdrawal / Issuance (WD)
               </button>
             )}
             {roleCfg.allowedTypes.includes('STR') && (
@@ -414,7 +414,7 @@ export function NewRequestModal({
                     : 'bg-[#f8f9fa] text-[#1f2328] hover:bg-[#eef0f3]'
                 }`}
               >
-                Stock Transfer / Excess Return (STR)
+                Stock Transfer / Excess Return (OTH)
               </button>
             )}
           </div>

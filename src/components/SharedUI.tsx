@@ -37,7 +37,7 @@ export function getPoStageLabel(status: string): { label: string; colorClass: st
     case 'Returned to Applicant':
       return { label: 'Returned to Applicant — Revision Needed', colorClass: 'text-[#c5221f]' };
     case 'Approved':
-      return { label: 'Sent to Receiver (GRN) • In Transit / On Delivery', colorClass: 'text-[#005ec4]' };
+      return { label: 'Sent to Receiver (RCV) • In Transit / On Delivery', colorClass: 'text-[#005ec4]' };
     case 'Partially Received':
       return { label: 'On Delivery — Partially Received at Warehouse', colorClass: 'text-[#b06000]' };
     case 'Completed':

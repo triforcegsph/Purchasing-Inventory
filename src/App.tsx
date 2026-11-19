@@ -87,16 +87,16 @@ const NAV_GROUPS: NavGroup[] = [
   {
     group: 'Purchasing Management',
     items: [
-      { key: 'pr', code: 'PRQ', label: 'Purchase Requisition', icon: ClipboardList },
-      { key: 'po', code: 'POE', label: 'Purchase Order Entry', icon: ShoppingCart },
+      { key: 'pr', code: 'PR', label: 'Purchase Requisition', icon: ClipboardList },
+      { key: 'po', code: 'PO', label: 'Purchase Order', icon: ShoppingCart },
     ],
   },
   {
     group: 'Inventory & Warehouse',
     items: [
-      { key: 'receiving', code: 'GRN', label: 'Goods Receiving (DR)', icon: PackageCheck },
-      { key: 'withdrawal', code: 'ISS', label: 'Material Withdrawal', icon: PackageMinus },
-      { key: 'transfers', code: 'STR', label: 'Transfers & Rules', icon: ArrowLeftRight },
+      { key: 'receiving', code: 'RCV', label: 'Receiving (DR)', icon: PackageCheck },
+      { key: 'withdrawal', code: 'WD', label: 'Withdrawal', icon: PackageMinus },
+      { key: 'transfers', code: 'OTH', label: 'Transfers & Rules', icon: ArrowLeftRight },
     ],
   },
   {
@@ -509,7 +509,7 @@ export function App() {
               <input
                 value={funcJump}
                 onChange={(e) => setFuncJump(e.target.value)}
-                placeholder="Function code (BOQ, PRQ, POE, GRN)..."
+                placeholder="Function code (BOQ, PR, PO, RCV)..."
                 className="w-60 pl-8 pr-2.5 py-1 text-xs bg-[#181a1e] border border-[#3c414a] rounded-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#0072ed]"
               />
             </div>
@@ -522,7 +522,7 @@ export function App() {
             type="button"
             onClick={() => setShowMyRequestsModal(true)}
             className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#181a1e] hover:bg-[#32363e] text-slate-100 border border-[#3c414a] text-xs font-semibold rounded-xs cursor-pointer"
-            title="View all submitted requests (PRQ, ISS, POE) in one place"
+            title="View all submitted requests (PR, WD, PO) in one place"
           >
             <ClipboardList className="w-3.5 h-3.5 text-[#4da3ff]" />
             <span>My Requests ({prs.length + withdrawals.length + pos.length})</span>

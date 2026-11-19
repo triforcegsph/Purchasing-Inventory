@@ -152,7 +152,7 @@ export function ReceivingModule({
       <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
         <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
-            GRN — Goods Receiving (DR)
+            RCV — Receiving (DR)
           </span>
           <div className="flex items-center gap-1.5">
             <button
@@ -400,7 +400,7 @@ export function ReceivingModule({
 
       {showSummary && (
         <SummaryReportModal
-          title="Receiving (GRN)"
+          title="Receiving (RCV)"
           headers={['GRN No.', 'PO No.', 'Ref Doc No.', 'IAAS2 Ref', 'DR No.', 'DR Date', 'Performed At', 'Status']}
           rows={receivings.map((r) => [
             r.grnNo,

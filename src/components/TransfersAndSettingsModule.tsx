@@ -347,7 +347,7 @@ export function TransfersAndSettingsModule({
                   : 'text-[#495057] hover:text-[#1f2328]'
               }`}
             >
-              <PackageMinus className="w-3.5 h-3.5" /> Form 1: Issuances (Stock Out / ISS)
+              <PackageMinus className="w-3.5 h-3.5" /> Form 1: Issuances (Stock Out / WD)
             </button>
             <button
               type="button"
@@ -358,7 +358,7 @@ export function TransfersAndSettingsModule({
                   : 'text-[#495057] hover:text-[#1f2328]'
               }`}
             >
-              <PackageCheck className="w-3.5 h-3.5" /> Form 2: PO Receivings (Stock In / GRN)
+              <PackageCheck className="w-3.5 h-3.5" /> Form 2: PO Receivings (Stock In / RCV)
             </button>
           </div>
         </div>
@@ -796,7 +796,7 @@ export function TransfersAndSettingsModule({
           <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
             <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
-                STR — Stock Transfer &amp; Excess Return
+                OTH — Stock Transfer &amp; Excess Return
               </span>
               <button
                 onClick={handlePostTransferSubmit}

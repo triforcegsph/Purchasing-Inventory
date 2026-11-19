@@ -164,7 +164,7 @@ export function MyRequestsModal({
             <div className="border border-[#cfd5dc] rounded-[2px] overflow-hidden">
               <div className="px-3 py-1.5 bg-[#f4f8ff] border-b border-[#cfd5dc] flex items-center justify-between">
                 <span className="font-bold text-[#004a99] flex items-center gap-1.5 uppercase text-[11px]">
-                  <ClipboardList className="w-3.5 h-3.5" /> Purchase Requisitions (PRQ)
+                  <ClipboardList className="w-3.5 h-3.5" /> Purchase Requisitions (PR)
                 </span>
                 <button
                   type="button"
@@ -174,7 +174,7 @@ export function MyRequestsModal({
                   }}
                   className="text-[11px] font-semibold text-[#005ec4] hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
-                  Open PRQ Module <ArrowRight className="w-3 h-3" />
+                  Open PR Module <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
               <div className="overflow-x-auto">
@@ -235,7 +235,7 @@ export function MyRequestsModal({
             <div className="border border-[#cfd5dc] rounded-[2px] overflow-hidden">
               <div className="px-3 py-1.5 bg-[#f4fbf6] border-b border-[#cfd5dc] flex items-center justify-between">
                 <span className="font-bold text-[#137333] flex items-center gap-1.5 uppercase text-[11px]">
-                  <PackageMinus className="w-3.5 h-3.5" /> Material Withdrawals (ISS)
+                  <PackageMinus className="w-3.5 h-3.5" /> Material Withdrawals (WD)
                 </span>
                 <button
                   type="button"
@@ -245,7 +245,7 @@ export function MyRequestsModal({
                   }}
                   className="text-[11px] font-semibold text-[#137333] hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
-                  Open ISS Module <ArrowRight className="w-3 h-3" />
+                  Open WD Module <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
               <div className="overflow-x-auto">
@@ -304,7 +304,7 @@ export function MyRequestsModal({
             <div className="border border-[#cfd5dc] rounded-[2px] overflow-hidden">
               <div className="px-3 py-1.5 bg-[#f4f6f8] border-b border-[#cfd5dc] flex items-center justify-between">
                 <span className="font-bold text-[#1f2328] flex items-center gap-1.5 uppercase text-[11px]">
-                  <ShoppingCart className="w-3.5 h-3.5" /> Purchase Orders (POE)
+                  <ShoppingCart className="w-3.5 h-3.5" /> Purchase Orders (PO)
                 </span>
                 <button
                   type="button"
@@ -314,7 +314,7 @@ export function MyRequestsModal({
                   }}
                   className="text-[11px] font-semibold text-[#005ec4] hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
-                  Open POE Module <ArrowRight className="w-3 h-3" />
+                  Open PO Module <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
               <div className="overflow-x-auto">
