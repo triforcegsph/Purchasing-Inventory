@@ -72,30 +72,26 @@ interface NavGroup {
     key: ModuleKey;
     code: string;
     label: string;
+    step?: number;
     icon: React.ComponentType<{ className?: string }>;
   }[];
 }
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    group: 'Project & Take-Off',
+    group: 'Process Flow (Step 1 → 6)',
     items: [
-      { key: 'boq', code: 'BOQ', label: 'Bill of Quantities', icon: FileSpreadsheet },
-      { key: 'pqto', code: 'PQTO', label: 'Project Qty Take-Off', icon: Calculator },
+      { key: 'boq', code: 'BOQ', step: 1, label: 'Bill of Quantities', icon: FileSpreadsheet },
+      { key: 'pqto', code: 'PQTO', step: 2, label: 'Project Qty Take-Off', icon: Calculator },
+      { key: 'pr', code: 'PR', step: 3, label: 'Purchase Requisition', icon: ClipboardList },
+      { key: 'po', code: 'PO', step: 4, label: 'Purchase Order', icon: ShoppingCart },
+      { key: 'receiving', code: 'RCV', step: 5, label: 'Receiving (DR)', icon: PackageCheck },
+      { key: 'withdrawal', code: 'WD', step: 6, label: 'Withdrawal', icon: PackageMinus },
     ],
   },
   {
-    group: 'Purchasing Management',
+    group: 'Inventory & Controls',
     items: [
-      { key: 'pr', code: 'PR', label: 'Purchase Requisition', icon: ClipboardList },
-      { key: 'po', code: 'PO', label: 'Purchase Order', icon: ShoppingCart },
-    ],
-  },
-  {
-    group: 'Inventory & Warehouse',
-    items: [
-      { key: 'receiving', code: 'RCV', label: 'Receiving (DR)', icon: PackageCheck },
-      { key: 'withdrawal', code: 'WD', label: 'Withdrawal', icon: PackageMinus },
       { key: 'transfers', code: 'OTH', label: 'Transfers & Rules', icon: ArrowLeftRight },
     ],
   },
@@ -676,11 +672,23 @@ export function App() {
                               : 'text-slate-300 border-transparent hover:bg-[#343942] hover:text-white'
                           }`}
                         >
-                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#4da3ff]' : 'text-slate-400'}`} />
-                          <span className="font-mono text-[11px] px-1 py-0.2 bg-[#1c1f24] text-slate-300 rounded-xs border border-[#3c414a]">
+                          {item.step ? (
+                            <span
+                              className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
+                                isActive
+                                  ? 'bg-[#0072ed] text-white'
+                                  : 'bg-[#1c1f24] text-slate-300 border border-[#3c414a]'
+                              }`}
+                            >
+                              {item.step}
+                            </span>
+                          ) : (
+                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#4da3ff]' : 'text-slate-400'}`} />
+                          )}
+                          <span className="truncate flex-1">{item.label}</span>
+                          <span className="font-mono text-[10px] px-1 py-0.2 bg-[#1c1f24] text-slate-400 rounded-xs border border-[#3c414a] shrink-0">
                             {item.code}
                           </span>
-                          <span className="truncate">{item.label}</span>
                         </button>
                       );
                     })}
@@ -725,11 +733,23 @@ export function App() {
                               : 'text-slate-300 border-transparent hover:bg-[#343942]'
                           }`}
                         >
-                          <Icon className="w-4 h-4 shrink-0" />
-                          <span className="font-mono text-[11px] px-1 bg-[#1c1f24] rounded-xs">
+                          {item.step ? (
+                            <span
+                              className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
+                                isActive
+                                  ? 'bg-[#0072ed] text-white'
+                                  : 'bg-[#1c1f24] text-slate-300 border border-[#3c414a]'
+                              }`}
+                            >
+                              {item.step}
+                            </span>
+                          ) : (
+                            <Icon className="w-4 h-4 shrink-0" />
+                          )}
+                          <span className="truncate flex-1">{item.label}</span>
+                          <span className="font-mono text-[10px] px-1 bg-[#1c1f24] text-slate-400 rounded-xs border border-[#3c414a] shrink-0">
                             {item.code}
                           </span>
-                          <span>{item.label}</span>
                         </button>
                       );
                     })}
