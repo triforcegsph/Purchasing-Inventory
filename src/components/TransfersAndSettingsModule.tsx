@@ -247,33 +247,45 @@ export function TransfersAndSettingsModule({
       )}
 
       {/* Clean Sub-Navigation Tabs */}
-      <div className="bg-white border border-[#cfd5dc] rounded-[2px] p-1.5 flex flex-wrap items-center gap-1.5">
-        {(
-          isPurchaser
-            ? ([
-                { key: 'stock', label: `Inventory Stock (${stock.length})` },
-                { key: 'overview', label: 'Cost & Movements' },
-              ] as const)
-            : ([
-                { key: 'overview', label: 'Cost & Movements' },
-                { key: 'stock', label: `Inventory Stock (${stock.length})` },
-                { key: 'transfers', label: `Stock Transfers (${transfers.length})` },
-                { key: 'rules', label: 'Rules & SMTP' },
-              ] as const)
-        ).map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveSection(tab.key)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-[2px] cursor-pointer transition-colors ${
-              activeSection === tab.key
-                ? 'bg-[#0072ed] text-white'
-                : 'bg-[#f4f6f8] text-[#1f2328] hover:bg-[#e5e8ec] border border-[#cfd5dc]'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="bg-white border border-[#cfd5dc] rounded-[2px] p-2 space-y-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(
+            isPurchaser
+              ? ([
+                  { key: 'stock', label: `Inventory Stock (${stock.length})` },
+                  { key: 'overview', label: 'Cost & Movements' },
+                ] as const)
+              : ([
+                  { key: 'overview', label: 'Cost & Movements' },
+                  { key: 'stock', label: `Inventory Stock (${stock.length})` },
+                  { key: 'transfers', label: `Stock Transfers (${transfers.length})` },
+                  { key: 'rules', label: 'Rules & SMTP' },
+                ] as const)
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveSection(tab.key)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-[2px] cursor-pointer transition-colors ${
+                activeSection === tab.key
+                  ? 'bg-[#0072ed] text-white'
+                  : 'bg-[#f4f6f8] text-[#1f2328] hover:bg-[#e5e8ec] border border-[#cfd5dc]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-[#5c646d] px-0.5">
+          {activeSection === 'stock' &&
+            'Search current warehouse stock levels and manually add new items to inventory.'}
+          {activeSection === 'overview' &&
+            'Review PO budget vs. site issuance completion, projected cost, and stock movement history.'}
+          {activeSection === 'transfers' &&
+            'Log site-to-site stock transfers or excess material returns back to Central Warehouse.'}
+          {activeSection === 'rules' &&
+            'Configure required-field validation rules and SMTP email notifications.'}
+        </p>
       </div>
 
       {activeSection === 'overview' && (

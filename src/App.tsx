@@ -238,10 +238,17 @@ export function App() {
   const allowedModules = ROLE_MODULES[activeRole];
   const visibleNavGroups = NAV_GROUPS.map((g) => ({
     ...g,
-    items: g.items.filter((it) => allowedModules.includes(it.key)),
+    items: g.items
+      .filter((it) => allowedModules.includes(it.key))
+      .map((it) =>
+        activeRole === 'Purchaser' && it.key === 'transfers'
+          ? { ...it, code: 'INV', label: 'Inventory & Cost' }
+          : it
+      ),
   })).filter((g) => g.items.length > 0);
 
-  const activeNavItem = ALL_NAV_ITEMS.find((i) => i.key === activeModule) || ALL_NAV_ITEMS[0];
+  const visibleNavItems = visibleNavGroups.flatMap((g) => g.items);
+  const activeNavItem = visibleNavItems.find((i) => i.key === activeModule) || ALL_NAV_ITEMS[0];
 
   const handleFunctionJump = (e: React.FormEvent) => {
     e.preventDefault();
@@ -749,6 +756,30 @@ export function App() {
             <div className="text-[11px] text-slate-500 font-mono">
               Period: 2026/011 • Ledger: ACTUALS • Role: {activeRole}
             </div>
+          </div>
+
+          {/* Plain-English Module Quick Guide */}
+          <div className="bg-[#f7f9fc] border-b border-[#dfe4ea] px-4 py-1.5 text-[11px] text-[#495057]">
+            {activeModule === 'boq' &&
+              'Step 1: Upload a CSV or enter project items manually, then click "Post to PQTO" to lock quantities for purchasing.'}
+            {activeModule === 'pqto' &&
+              'Step 2: Review converted purchasing units and remaining project budget, then click "Create PR" to start a requisition.'}
+            {activeModule === 'pr' &&
+              'Step 3: Submit Purchase Requisitions (checked against PQTO balance). REQ Approver can Approve or Reject, then click "To PO".'}
+            {activeModule === 'po' &&
+              'Step 4: Generate Purchase Orders from approved PRs. PO Approver authorizes orders before they move to Receiving.'}
+            {activeModule === 'receiving' &&
+              'Step 5: Select an approved PO, enter the Delivery Receipt (DR) details and actual received quantities, then post to add stock.'}
+            {activeModule === 'withdrawal' &&
+              'Step 6: Search warehouse stock by system or item and process site material withdrawals (automatically checks available stock).'}
+            {activeModule === 'transfers' &&
+              (activeRole === 'Purchaser'
+                ? 'View live warehouse inventory stock, add new inventory items, and monitor PO vs. issuance cost.'
+                : 'Manage inventory stock, site-to-site transfers, excess returns to warehouse, cost completion, and system rules.')}
+            {activeModule === 'tracking' &&
+              'Track any order from start to finish (BOQ → PQTO → PR → PO → Receiving → Site Withdrawal) with live status steps.'}
+            {activeModule === 'logs' &&
+              'Audit trail of all actions, approvals, rejections, stock updates, and notifications across modules.'}
           </div>
 
           {/* Active Form Canvas */}

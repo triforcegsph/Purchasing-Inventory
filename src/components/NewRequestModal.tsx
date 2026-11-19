@@ -426,6 +426,16 @@ export function NewRequestModal({
             )}
           </div>
 
+          {/* Plain-English Form Guide */}
+          <div className="bg-[#f4f6f8] border border-[#d5dbe2] rounded-[2px] px-3 py-1.5 text-[11px] text-[#495057]">
+            {requestType === 'PR' &&
+              'Request new materials to be purchased for this project (checked against remaining PQTO budget).'}
+            {requestType === 'ISS' &&
+              'Withdraw materials currently in warehouse stock for site use (live stock availability is shown per row).'}
+            {requestType === 'STR' &&
+              'Move stock between site locations or return excess materials back to Central Warehouse.'}
+          </div>
+
           {/* Form Header Fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 bg-[#fafbfd] p-3 border border-[#cfd5dc] rounded-[2px]">
             <div>
