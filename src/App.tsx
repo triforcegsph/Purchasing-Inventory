@@ -1,0 +1,819 @@
+import { useState } from 'react';
+import {
+  ArrowLeftRight,
+  Bell,
+  Calculator,
+  ChevronRight,
+  ClipboardList,
+  Database,
+  FilePlus2,
+  FileSpreadsheet,
+  History,
+  Menu,
+  PackageCheck,
+  PackageMinus,
+  Search,
+  ShoppingCart,
+  UserCheck,
+  X,
+} from 'lucide-react';
+import type {
+  BoqItem,
+  ModuleKey,
+  NotificationItem,
+  PoRecord,
+  PqtoRecord,
+  PrRecord,
+  ReceivingRecord,
+  RequiredFieldConfig,
+  SmtpConfig,
+  StockTransferRecord,
+  TransactionLog,
+  WarehouseStock,
+  WithdrawalRecord,
+} from './types/erp';
+import {
+  CIVIL_BOQ_ITEMS,
+  CIVIL_PQTOS,
+  INITIAL_BOQ_ITEMS,
+  INITIAL_LOGS,
+  INITIAL_NOTIFICATIONS,
+  INITIAL_POS,
+  INITIAL_PQTOS,
+  INITIAL_PRS,
+  INITIAL_RECEIVINGS,
+  INITIAL_REQUIRED_CONFIG,
+  INITIAL_SMTP_CONFIG,
+  INITIAL_STOCK,
+  INITIAL_TRANSFERS,
+  INITIAL_WITHDRAWALS,
+} from './data/seedData';
+import { BoqModule } from './components/BoqModule';
+import { PqtoModule } from './components/PqtoModule';
+import { PrModule } from './components/PrModule';
+import { PoModule } from './components/PoModule';
+import { ReceivingModule } from './components/ReceivingModule';
+import { WithdrawalModule } from './components/WithdrawalModule';
+import { TransfersAndSettingsModule } from './components/TransfersAndSettingsModule';
+import { LogsModule } from './components/LogsModule';
+import { NewRequestModal } from './components/NewRequestModal';
+
+interface NavGroup {
+  group: string;
+  items: {
+    key: ModuleKey;
+    code: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    group: 'Project & Take-Off',
+    items: [
+      { key: 'boq', code: 'BOQ', label: 'Bill of Quantities', icon: FileSpreadsheet },
+      { key: 'pqto', code: 'PQTO', label: 'Project Qty Take-Off', icon: Calculator },
+    ],
+  },
+  {
+    group: 'Purchasing Management',
+    items: [
+      { key: 'pr', code: 'PRQ', label: 'Purchase Requisition', icon: ClipboardList },
+      { key: 'po', code: 'POE', label: 'Purchase Order Entry', icon: ShoppingCart },
+    ],
+  },
+  {
+    group: 'Inventory & Warehouse',
+    items: [
+      { key: 'receiving', code: 'GRN', label: 'Goods Receiving (DR)', icon: PackageCheck },
+      { key: 'withdrawal', code: 'ISS', label: 'Material Withdrawal', icon: PackageMinus },
+      { key: 'transfers', code: 'STR', label: 'Transfers & Rules', icon: ArrowLeftRight },
+    ],
+  },
+  {
+    group: 'Administration & Audit',
+    items: [
+      { key: 'logs', code: 'LOG', label: 'Transaction Logs', icon: History },
+    ],
+  },
+];
+
+const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+
+const ROLE_MODULES: Record<'Applicant' | 'Approver' | 'Warehouse Admin', ModuleKey[]> = {
+  Applicant: ['boq', 'pqto', 'pr', 'po', 'withdrawal', 'logs'],
+  Approver: ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'logs'],
+  'Warehouse Admin': ['receiving', 'withdrawal', 'transfers', 'po', 'logs'],
+};
+
+const ROLE_DEFAULT_MODULE: Record<'Applicant' | 'Approver' | 'Warehouse Admin', ModuleKey> = {
+  Applicant: 'boq',
+  Approver: 'po',
+  'Warehouse Admin': 'receiving',
+};
+
+export function App() {
+  const [activeModule, setActiveModule] = useState<ModuleKey>('boq');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [funcJump, setFuncJump] = useState('');
+  const [businessUnit, setBusinessUnit] = useState('PROJ-TWRB');
+  const [activeRole, setActiveRole] = useState<'Applicant' | 'Approver' | 'Warehouse Admin'>('Applicant');
+  const [showNotifs, setShowNotifs] = useState(false);
+
+  // Core ERP State
+  const [boqItems, setBoqItems] = useState<BoqItem[]>(INITIAL_BOQ_ITEMS);
+  const [boqStatus, setBoqStatus] = useState<'Draft' | 'Posted'>('Draft');
+  const [pqtos, setPqtos] = useState<PqtoRecord[]>(INITIAL_PQTOS);
+  const [prs, setPrs] = useState<PrRecord[]>(INITIAL_PRS);
+  const [pos, setPos] = useState<PoRecord[]>(INITIAL_POS);
+  const [receivings, setReceivings] = useState<ReceivingRecord[]>(INITIAL_RECEIVINGS);
+  const [stock, setStock] = useState<WarehouseStock[]>(INITIAL_STOCK);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRecord[]>(INITIAL_WITHDRAWALS);
+  const [transfers, setTransfers] = useState<StockTransferRecord[]>(INITIAL_TRANSFERS);
+  const [logs, setLogs] = useState<TransactionLog[]>(INITIAL_LOGS);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+  const [config, setConfig] = useState<RequiredFieldConfig>(INITIAL_REQUIRED_CONFIG);
+  const [smtpConfig, setSmtpConfig] = useState<SmtpConfig>(INITIAL_SMTP_CONFIG);
+
+  // Navigation context
+  const [selectedPqtoForPr, setSelectedPqtoForPr] = useState<string | undefined>(undefined);
+  const [selectedPrForPo, setSelectedPrForPo] = useState<string | undefined>(undefined);
+  const [selectedPoForReceiving, setSelectedPoForReceiving] = useState<string | undefined>(undefined);
+  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
+
+  const handleProjectChange = (newProj: string) => {
+    setBusinessUnit(newProj);
+    if (newProj === 'PROJ-CIVIL1') {
+      setBoqItems(CIVIL_BOQ_ITEMS);
+      setPqtos(CIVIL_PQTOS);
+      setBoqStatus('Posted');
+    } else {
+      setBoqItems(INITIAL_BOQ_ITEMS);
+      setPqtos(INITIAL_PQTOS);
+      setBoqStatus('Draft');
+    }
+    addLog('System', newProj, 'Switched Project', `Active workspace switched to ${newProj}`);
+  };
+
+  const handleRoleChange = (newRole: 'Applicant' | 'Approver' | 'Warehouse Admin') => {
+    setActiveRole(newRole);
+    const allowed = ROLE_MODULES[newRole];
+    if (!allowed.includes(activeModule)) {
+      setActiveModule(ROLE_DEFAULT_MODULE[newRole]);
+    }
+  };
+
+  const allowedModules = ROLE_MODULES[activeRole];
+  const visibleNavGroups = NAV_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((it) => allowedModules.includes(it.key)),
+  })).filter((g) => g.items.length > 0);
+
+  const activeNavItem = ALL_NAV_ITEMS.find((i) => i.key === activeModule) || ALL_NAV_ITEMS[0];
+
+  const handleFunctionJump = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = funcJump.trim().toUpperCase();
+    if (!q) return;
+    const match = ALL_NAV_ITEMS.find(
+      (i) => i.code === q || i.label.toUpperCase().includes(q)
+    );
+    if (match) {
+      setActiveModule(match.key);
+      setFuncJump('');
+    }
+  };
+
+  const addLog = (module: string, docNo: string, action: string, comments: string, spName = 'SP-MECH-ALPHA') => {
+    const entry: TransactionLog = {
+      id: `log-${Date.now()}-${Math.random()}`,
+      timestamp: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      adminOrUser: `${activeRole} (Admin)`,
+      spName,
+      module,
+      docNo,
+      action,
+      comments,
+    };
+    setLogs((prev) => [entry, ...prev]);
+  };
+
+  const pushNotification = (recipientRole: 'Approver' | 'Applicant', title: string, message: string) => {
+    setNotifications((prev) => [
+      {
+        id: `notif-${Date.now()}`,
+        recipientRole,
+        title,
+        message,
+        timestamp: new Date().toLocaleTimeString(),
+        read: false,
+      },
+      ...prev,
+    ]);
+  };
+
+  const handleSaveBoqDraft = () => {
+    setBoqStatus('Draft');
+    addLog('BOQ', 'BOQ-2026-001', 'Saved as Draft', `${boqItems.length} rows saved in BOQ draft.`);
+  };
+
+  const handlePostBoqToPqto = () => {
+    setBoqStatus('Posted');
+    const transactionalItems = boqItems.filter(
+      (it) => !it.isBlankRow && !it.isWorksRelated && it.itemCode.trim() !== ''
+    );
+    const newPqtoNo = `PQTO-2026-00${pqtos.length + 1}`;
+    const newPqto: PqtoRecord = {
+      id: `pqto-${Date.now()}`,
+      pqtoNo: newPqtoNo,
+      jobNo: 'JOB-2026-884',
+      projectTitle: 'Posted from BOQ Workspace',
+      status: 'Posted',
+      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      items: transactionalItems.map((it) => ({
+        boqItemId: it.id,
+        itemCode: it.itemCode,
+        description: it.description,
+        boqUom: it.boqUom || 'lot',
+        boqQty: it.boqQty,
+        pqtoUom: it.pqtoUom || 'PC/s',
+        pqtoQty: it.pqtoQty || it.boqQty,
+        prOrderedQty: 0,
+        assignedLocation: it.assignedLocation || 'Site-Wide',
+      })),
+    };
+    setPqtos((prev) => [newPqto, ...prev]);
+    addLog(
+      'BOQ',
+      'BOQ-2026-001',
+      'Posted to PQTO',
+      `Created ${newPqtoNo} with ${transactionalItems.length} transactional items (excluded blank & works-related rows).`
+    );
+
+    if (smtpConfig.notifyOnBoqToPr) {
+      pushNotification(
+        'Applicant',
+        'SMTP Alert: BOQ Posted to PQTO/PR',
+        `Automated notification sent via ${smtpConfig.host} to ${smtpConfig.recipientBoqToPr} for ${newPqtoNo}.`
+      );
+      addLog(
+        'SMTP',
+        newPqtoNo,
+        'Email Dispatched (BOQ -> PR)',
+        `Sent notification to ${smtpConfig.recipientBoqToPr} via ${smtpConfig.host}:${smtpConfig.port} (${smtpConfig.encryption}).`
+      );
+    }
+
+    setActiveModule('pqto');
+  };
+
+  const handleApprovePr = (prId: string) => {
+    setPrs((prev) =>
+      prev.map((p) => (p.id === prId ? { ...p, status: 'Approved' } : p))
+    );
+    const pr = prs.find((p) => p.id === prId);
+    if (pr) {
+      addLog('PR', pr.prNo, 'Approved', 'PR approved for PO conversion.', pr.spName);
+      pushNotification('Applicant', 'PR Approved', `${pr.prNo} has been approved and is ready for PO.`);
+    }
+  };
+
+  const handleApprovePo = (poId: string) => {
+    setPos((prev) =>
+      prev.map((p) => (p.id === poId ? { ...p, status: 'Approved' } : p))
+    );
+    const po = pos.find((p) => p.id === poId);
+    if (po) {
+      addLog('PO', po.poNo, 'Approved', `IAAS2: ${po.iaas2RefNo} approved.`, po.spName);
+      pushNotification('Applicant', 'PO Approved', `${po.poNo} (${po.iaas2RefNo}) is approved for Receiving.`);
+    }
+  };
+
+  const handleRejectPo = (poId: string, comments: string) => {
+    setPos((prev) =>
+      prev.map((p) =>
+        p.id === poId
+          ? { ...p, status: 'Returned to Applicant', rejectionComments: comments }
+          : p
+      )
+    );
+    const po = pos.find((p) => p.id === poId);
+    if (po) {
+      addLog('PO', po.poNo, 'REJECTED → Returned to Applicant', comments, po.spName);
+      pushNotification(
+        'Applicant',
+        `PO Rejected: ${po.poNo}`,
+        `Returned to ${po.applicant}. Comment: "${comments}"`
+      );
+    }
+  };
+
+  const handlePostReceiving = (rec: ReceivingRecord) => {
+    setReceivings((prev) => [rec, ...prev]);
+
+    setPos((prev) =>
+      prev.map((po) => {
+        if (po.poNo !== rec.poNo) return po;
+        const updatedItems = po.items.map((poIt) => {
+          const recIt = rec.items.find((r) => r.itemCode === poIt.itemCode);
+          if (!recIt) return poIt;
+          return { ...poIt, receivedQty: poIt.receivedQty + recIt.actualReceivedQty };
+        });
+        const allDone = updatedItems.every((i) => i.receivedQty >= i.poQty);
+        return {
+          ...po,
+          items: updatedItems,
+          status: allDone ? 'Completed' : 'Partially Received',
+        };
+      })
+    );
+
+    setStock((prev) => {
+      const next = prev.map((s) => ({ ...s }));
+      rec.items.forEach((recIt) => {
+        if (recIt.actualReceivedQty <= 0) return;
+        const idx = next.findIndex((s) => s.itemCode === recIt.itemCode);
+        if (idx >= 0) {
+          next[idx] = {
+            ...next[idx],
+            availableStock: next[idx].availableStock + recIt.actualReceivedQty,
+          };
+        } else {
+          next.push({
+            id: `stk-${Date.now()}-${recIt.itemCode}`,
+            itemCode: recIt.itemCode,
+            description: recIt.description,
+            uom: recIt.uom,
+            systemTag: 'MEPF - Chilled Water',
+            assignedLocation: 'Central Warehouse',
+            availableStock: recIt.actualReceivedQty,
+            reservedStock: 0,
+          });
+        }
+      });
+      return next;
+    });
+
+    addLog(
+      'Receiving',
+      rec.grnNo,
+      `Posted (${rec.status})`,
+      `PO: ${rec.poNo} | DR: ${rec.drNo} (${rec.drDate})`,
+      rec.spName
+    );
+  };
+
+  const handlePostWithdrawal = (wd: WithdrawalRecord) => {
+    setWithdrawals((prev) => [wd, ...prev]);
+    if (wd.status === 'With Stock') {
+      const wdItem = wd.items[0];
+      if (wdItem) {
+        setStock((prev) =>
+          prev.map((s) =>
+            s.itemCode === wdItem.itemCode
+              ? { ...s, availableStock: Math.max(0, s.availableStock - wdItem.requestedQty) }
+              : s
+          )
+        );
+      }
+    }
+    addLog(
+      'Withdrawal',
+      wd.wdNo,
+      `Processed (${wd.status})`,
+      `System: ${wd.systemTag} | Item: ${wd.items[0]?.itemCode}`,
+      wd.spName
+    );
+  };
+
+  const handlePostTransfer = (tr: StockTransferRecord) => {
+    setTransfers((prev) => [tr, ...prev]);
+    if (tr.type === 'Excess Return to Warehouse') {
+      setStock((prev) =>
+        prev.map((s) =>
+          s.itemCode === tr.itemCode
+            ? { ...s, availableStock: s.availableStock + tr.qty }
+            : s
+        )
+      );
+    }
+    addLog('Transfers', tr.transferNo, tr.type, `${tr.qty} ${tr.uom} of ${tr.itemCode}: ${tr.reason}`);
+  };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#eef0f3] text-[#1f2328]">
+      {/* Infor SunSystems Top Masthead */}
+      <header className="bg-[#23262b] text-white h-12 flex items-center justify-between px-3 border-b border-[#16181c] sticky top-0 z-40">
+        <div className="flex items-center gap-3">
+          {/* Desktop sidebar toggle / Mobile drawer toggle */}
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="hidden lg:flex p-1.5 rounded hover:bg-[#32363e] text-slate-300 cursor-pointer"
+            title="Toggle Navigation Panel"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            className="lg:hidden p-1.5 rounded hover:bg-[#32363e] text-slate-300 cursor-pointer"
+            title="Open Menu"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+
+          {/* Brand Title */}
+          <span className="text-xs font-semibold tracking-wide uppercase text-slate-200">
+            Construction Material Control & Procurement
+          </span>
+
+          {/* SunSystems Function Code Quick-Launch */}
+          <form onSubmit={handleFunctionJump} className="hidden md:flex items-center ml-4">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                value={funcJump}
+                onChange={(e) => setFuncJump(e.target.value)}
+                placeholder="Function code (BOQ, PRQ, POE, GRN)..."
+                className="w-60 pl-8 pr-2.5 py-1 text-xs bg-[#181a1e] border border-[#3c414a] rounded-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#0072ed]"
+              />
+            </div>
+          </form>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          {/* Quick New Request Form Button */}
+          <button
+            type="button"
+            onClick={() => setShowNewRequestModal(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#0072ed] hover:bg-[#005ec4] text-white text-xs font-semibold rounded-xs cursor-pointer shadow-xs"
+            title="Open New Request Form (Purchase Requisition or Material Withdrawal)"
+          >
+            <FilePlus2 className="w-3.5 h-3.5" />
+            <span>New Request</span>
+          </button>
+
+          {/* Project / Business Unit Selector */}
+          <div className="hidden sm:flex items-center gap-1.5 bg-[#181a1e] px-2.5 py-1 border border-[#3c414a] rounded-xs text-xs">
+            <span className="text-slate-400">Project:</span>
+            <select
+              value={businessUnit}
+              onChange={(e) => handleProjectChange(e.target.value)}
+              className="bg-transparent text-white font-semibold focus:outline-none cursor-pointer"
+            >
+              <option value="PROJ-TWRB" className="text-slate-900">PROJ-TWRB (Tower B)</option>
+              <option value="PROJ-CIVIL1" className="text-slate-900">PROJ-CIVIL1 (Site Infra)</option>
+            </select>
+          </div>
+
+          {/* Role Switcher */}
+          <div className="flex items-center gap-1.5 bg-[#181a1e] px-2.5 py-1 border border-[#3c414a] rounded-xs text-xs">
+            <UserCheck className="w-3.5 h-3.5 text-[#4da3ff]" />
+            <select
+              value={activeRole}
+              onChange={(e) => handleRoleChange(e.target.value as typeof activeRole)}
+              className="bg-transparent text-white font-medium focus:outline-none cursor-pointer"
+            >
+              <option value="Applicant" className="text-slate-900">Site Engineer (Applicant)</option>
+              <option value="Approver" className="text-slate-900">Project Manager (Approver)</option>
+              <option value="Warehouse Admin" className="text-slate-900">Site Warehouseman</option>
+            </select>
+          </div>
+
+          {/* Notifications Bell */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowNotifs((v) => !v);
+                setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+              }}
+              className="relative p-1.5 rounded-xs bg-[#32363e] hover:bg-[#3f444e] border border-[#454b56] cursor-pointer"
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4 text-slate-200" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#d5002b] text-white text-[10px] font-bold flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {showNotifs && (
+              <div className="absolute right-0 mt-2 w-80 bg-white text-slate-900 rounded-xs shadow-xl border border-[#cfd5dc] z-50 overflow-hidden">
+                <div className="px-3.5 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex justify-between items-center">
+                  <span className="text-xs font-bold uppercase tracking-wide text-slate-700">
+                    Infor OS Alerts
+                  </span>
+                  <button
+                    onClick={() => setShowNotifs(false)}
+                    className="text-xs text-[#0072ed] hover:underline cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
+                  {notifications.map((n) => (
+                    <div key={n.id} className="p-3 text-xs hover:bg-slate-50">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <span className="font-bold text-slate-800">{n.title}</span>
+                        <span className="text-[10px] text-slate-400">{n.timestamp}</span>
+                      </div>
+                      <p className="text-slate-600">{n.message}</p>
+                      <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 bg-blue-50 text-[#0072ed] border border-blue-200">
+                        To: {n.recipientRole}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Layout: Left SunSystems Sidebar + Content Workspace */}
+      <div className="flex-1 flex relative">
+        {/* Desktop Left Navigation Rail */}
+        {sidebarOpen && (
+          <aside className="hidden lg:flex flex-col w-60 bg-[#2b2f36] text-slate-200 border-r border-[#1f2228] shrink-0">
+            <div className="px-3 py-2.5 border-b border-[#3a3f48] flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                Functions
+              </span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 bg-[#1c1f24] text-[#4da3ff] border border-[#3c414a] rounded-xs">
+                {activeRole === 'Applicant'
+                  ? 'SITE ENG'
+                  : activeRole === 'Approver'
+                  ? 'PROJ MGR'
+                  : 'WAREHOUSE'}
+              </span>
+            </div>
+            <nav className="flex-1 overflow-y-auto py-2 space-y-4">
+              {visibleNavGroups.map((group) => (
+                <div key={group.group}>
+                  <div className="px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    {group.group}
+                  </div>
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeModule === item.key;
+                      return (
+                        <button
+                          key={item.key}
+                          onClick={() => setActiveModule(item.key)}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors cursor-pointer border-l-3 ${
+                            isActive
+                              ? 'bg-[#1f2328] text-white border-[#0072ed] font-semibold'
+                              : 'text-slate-300 border-transparent hover:bg-[#343942] hover:text-white'
+                          }`}
+                        >
+                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#4da3ff]' : 'text-slate-400'}`} />
+                          <span className="font-mono text-[11px] px-1 py-0.2 bg-[#1c1f24] text-slate-300 rounded-xs border border-[#3c414a]">
+                            {item.code}
+                          </span>
+                          <span className="truncate">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
+          </aside>
+        )}
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden flex">
+            <div className="w-64 bg-[#2b2f36] text-slate-200 h-full flex flex-col shadow-2xl">
+              <div className="px-3 py-3 border-b border-[#3a3f48] flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-white">
+                  SunSystems Menu
+                </span>
+                <button onClick={() => setMobileMenuOpen(false)} className="text-slate-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <nav className="flex-1 overflow-y-auto py-2 space-y-4">
+                {visibleNavGroups.map((group) => (
+                  <div key={group.group}>
+                    <div className="px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      {group.group}
+                    </div>
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeModule === item.key;
+                      return (
+                        <button
+                          key={item.key}
+                          onClick={() => {
+                            setActiveModule(item.key);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left border-l-3 ${
+                            isActive
+                              ? 'bg-[#1f2328] text-white border-[#0072ed] font-semibold'
+                              : 'text-slate-300 border-transparent hover:bg-[#343942]'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" />
+                          <span className="font-mono text-[11px] px-1 bg-[#1c1f24] rounded-xs">
+                            {item.code}
+                          </span>
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </nav>
+            </div>
+            <div className="flex-1 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          </div>
+        )}
+
+        {/* Right Workspace Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* SunSystems Context Breadcrumb & Process Bar */}
+          <div className="bg-white border-b border-[#cfd5dc] px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-slate-600">
+              <span className="font-semibold text-slate-800">{businessUnit}</span>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <span>Procurement & Material Control</span>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <span className="font-mono font-bold text-[#0072ed]">{activeNavItem.code}</span>
+              <span className="font-semibold text-slate-900">— {activeNavItem.label}</span>
+            </div>
+            <div className="text-[11px] text-slate-500 font-mono">
+              Period: 2026/011 • Ledger: ACTUALS • Role: {activeRole}
+            </div>
+          </div>
+
+          {/* Active Form Canvas */}
+          <main className="flex-1 p-3 sm:p-4 overflow-x-hidden">
+            {activeModule === 'boq' && (
+              <BoqModule
+                items={boqItems}
+                setItems={setBoqItems}
+                boqStatus={boqStatus}
+                onSaveDraft={handleSaveBoqDraft}
+                onPostToPqto={handlePostBoqToPqto}
+                onAddLog={addLog}
+              />
+            )}
+
+            {activeModule === 'pqto' && (
+              <PqtoModule
+                pqtos={pqtos}
+                setPqtos={setPqtos}
+                onNavigateToPr={(pqtoNo) => {
+                  setSelectedPqtoForPr(pqtoNo);
+                  setActiveModule('pr');
+                }}
+              />
+            )}
+
+            {activeModule === 'pr' && (
+              <PrModule
+                pqtos={pqtos}
+                prs={prs}
+                setPrs={setPrs}
+                config={config}
+                activeRole={activeRole}
+                initialPqtoNo={selectedPqtoForPr}
+                onApprovePr={handleApprovePr}
+                onNavigateToPo={(prNo) => {
+                  setSelectedPrForPo(prNo);
+                  setActiveModule('po');
+                }}
+                onAddLog={addLog}
+              />
+            )}
+
+            {activeModule === 'po' && (
+              <PoModule
+                prs={prs}
+                pos={pos}
+                setPos={setPos}
+                config={config}
+                activeRole={activeRole}
+                initialPrNo={selectedPrForPo}
+                onRejectPo={handleRejectPo}
+                onApprovePo={handleApprovePo}
+                onNavigateToReceiving={(poNo) => {
+                  setSelectedPoForReceiving(poNo);
+                  setActiveModule('receiving');
+                }}
+                onAddLog={addLog}
+              />
+            )}
+
+            {activeModule === 'receiving' && (
+              <ReceivingModule
+                pos={pos}
+                receivings={receivings}
+                stock={stock}
+                config={config}
+                initialPoNo={selectedPoForReceiving}
+                onPostReceiving={handlePostReceiving}
+              />
+            )}
+
+            {activeModule === 'withdrawal' && (
+              <WithdrawalModule
+                stock={stock}
+                withdrawals={withdrawals}
+                config={config}
+                onPostWithdrawal={handlePostWithdrawal}
+              />
+            )}
+
+            {activeModule === 'transfers' && (
+              <TransfersAndSettingsModule
+                stock={stock}
+                setStock={setStock}
+                transfers={transfers}
+                config={config}
+                setConfig={setConfig}
+                onPostTransfer={handlePostTransfer}
+                pos={pos}
+                withdrawals={withdrawals}
+                receivings={receivings}
+                smtpConfig={smtpConfig}
+                setSmtpConfig={setSmtpConfig}
+                onAddLog={addLog}
+                businessUnit={businessUnit}
+              />
+            )}
+
+            {activeModule === 'logs' && <LogsModule logs={logs} />}
+          </main>
+
+          {/* Footer Status Bar */}
+          <footer className="bg-[#dfe3e8] border-t border-[#cfd5dc] px-4 py-1.5 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1 font-semibold text-slate-700">
+                <Database className="w-3 h-3 text-emerald-600" />
+                SAP HANA Connected
+              </span>
+              <span className="hidden sm:inline">•</span>
+              <span className="hidden sm:inline">Business Unit: {businessUnit}</span>
+            </div>
+            <div className="font-mono">
+              1 License : 1 User • Mobile Ready
+            </div>
+          </footer>
+        </div>
+      </div>
+      {showNewRequestModal && (
+        <NewRequestModal
+          key={activeRole}
+          activeRole={activeRole}
+          businessUnit={businessUnit}
+          pqtos={pqtos}
+          stock={stock}
+          config={config}
+          onSubmitPr={(newPr) => {
+            setPrs((prev) => [newPr, ...prev]);
+            addLog(
+              'PR',
+              newPr.prNo,
+              newPr.status === 'Draft' ? 'Saved as Draft' : 'Submitted via New Request Form',
+              `Ref: ${newPr.refDocNo} | Items: ${newPr.items.length}`,
+              newPr.spName
+            );
+            if (newPr.status === 'Pending Approval') {
+              pushNotification(
+                'Approver',
+                'New PR Submitted',
+                `${newPr.prNo} from ${newPr.applicant} requires your approval.`
+              );
+            }
+            if (ROLE_MODULES[activeRole].includes('pr')) {
+              setActiveModule('pr');
+            }
+          }}
+          onSubmitWithdrawal={(newWd) => {
+            handlePostWithdrawal(newWd);
+            if (ROLE_MODULES[activeRole].includes('withdrawal')) {
+              setActiveModule('withdrawal');
+            }
+          }}
+          onSubmitTransfer={(newTr) => {
+            handlePostTransfer(newTr);
+            if (ROLE_MODULES[activeRole].includes('transfers')) {
+              setActiveModule('transfers');
+            }
+          }}
+          onClose={() => setShowNewRequestModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;

@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --infor-masthead: #23262b;
+    --infor-sidebar: #2b2f36;
+    --infor-red: #d5002b;
+    --infor-blue: #0072ed;
+    --infor-blue-hover: #005ec4;
+    --infor-canvas: #eef0f3;
+    --infor-border: #cfd5dc;
+  }
+
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--infor-canvas);
+    color: #1f2328;
+  }
+}
+
+/* SunSystems / SoHo Excel-like grid focus styling */
+.excel-cell:focus-within {
+  outline: 2px solid #0072ed;
+  outline-offset: -2px;
+  background-color: #edf5ff;
+}
+
+/* Print & PDF Export Rules */
+@media print {
+  @page {
+    size: portrait;
+    margin: 12mm 10mm;
+  }
+
+  /* Hide app chrome, masthead, sidebars, action buttons */
+  header,
+  footer,
+  aside,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Reset modal overlays for natural print flow */
+  .print-modal-backdrop {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    inset: auto !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .print-modal-container {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  #printable-po-document,
+  #printable-summary-document {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
