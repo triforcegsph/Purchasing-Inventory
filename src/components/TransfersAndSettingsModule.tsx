@@ -87,6 +87,9 @@ export function TransfersAndSettingsModule({
     }
   };
 
+  // Section tab state
+  const [activeSection, setActiveSection] = useState<'overview' | 'stock' | 'transfers' | 'rules'>('overview');
+
   // Stock Transfer state
   const [type, setType] = useState<'Stock Transfer' | 'Excess Return to Warehouse'>('Excess Return to Warehouse');
   const [selectedItemCode, setSelectedItemCode] = useState(stock[0]?.itemCode || '');
@@ -239,6 +242,33 @@ export function TransfersAndSettingsModule({
         </div>
       )}
 
+      {/* Clean Sub-Navigation Tabs */}
+      <div className="bg-white border border-[#cfd5dc] rounded-[2px] p-1.5 flex flex-wrap items-center gap-1.5">
+        {(
+          [
+            { key: 'overview', label: 'Cost & Movements' },
+            { key: 'stock', label: `Inventory Stock (${stock.length})` },
+            { key: 'transfers', label: `Stock Transfers (${transfers.length})` },
+            { key: 'rules', label: 'Rules & SMTP' },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveSection(tab.key)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-[2px] cursor-pointer transition-colors ${
+              activeSection === tab.key
+                ? 'bg-[#0072ed] text-white'
+                : 'bg-[#f4f6f8] text-[#1f2328] hover:bg-[#e5e8ec] border border-[#cfd5dc]'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeSection === 'overview' && (
+        <>
       {/* ========================================================================= */}
       {/* 1. ISSUANCE TOTAL / TOTAL ORDER % OF COMPLETION & PROJECTION COST CARD   */}
       {/* ========================================================================= */}
@@ -451,6 +481,11 @@ export function TransfersAndSettingsModule({
         )}
       </div>
 
+        </>
+      )}
+
+      {activeSection === 'stock' && (
+        <>
       {/* ========================================================================= */}
       {/* 3. INVENTORY SYSTEM FOR ADMIN CHECKING THE ITEMS (STOCK INSPECTION)       */}
       {/* ========================================================================= */}
@@ -643,10 +678,10 @@ export function TransfersAndSettingsModule({
           </table>
         </div>
       </div>
+        </>
+      )}
 
-      {/* ========================================================================= */}
-      {/* 4. SMTP SETUP FOR BOQ TO PR & VALIDATION RULES                           */}
-      {/* ========================================================================= */}
+      {activeSection === 'rules' && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
         {/* SMTP Configuration for BOQ to PR Email Dispatch */}
         <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
@@ -758,11 +793,9 @@ export function TransfersAndSettingsModule({
           </div>
         </div>
 
-        {/* Validation Rules & Stock Transfer Submission */}
-        <div className="space-y-3.5">
-          {/* Validation Rules */}
-          <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
-            <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+        {/* Validation Rules */}
+        <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
+          <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] text-xs font-bold uppercase tracking-wide text-[#1f2328]">
               System Field &amp; Validation Rules
             </div>
             <div className="p-3 space-y-1 text-xs">
@@ -791,7 +824,11 @@ export function TransfersAndSettingsModule({
               })}
             </div>
           </div>
+      </div>
+      )}
 
+      {activeSection === 'transfers' && (
+        <>
           {/* Stock Transfer & Excess Return Form */}
           <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
             <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex items-center justify-between">
@@ -891,8 +928,6 @@ export function TransfersAndSettingsModule({
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
       {/* Transfer & Return Register Table */}
       <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
@@ -932,6 +967,8 @@ export function TransfersAndSettingsModule({
           </table>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
