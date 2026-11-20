@@ -11,6 +11,7 @@ import {
   Send,
   ShieldCheck,
   TrendingUp,
+  Upload,
   X,
 } from 'lucide-react';
 import type {
@@ -113,8 +114,8 @@ export function TransfersAndSettingsModule({
   // SMTP Testing feedback state
   const [isTestingSmtp, setIsTestingSmtp] = useState(false);
 
-  // Add Item to Inventory form state
-  const [showAddItemForm, setShowAddItemForm] = useState(false);
+  // Add Item to Inventory form state (visible by default for authorized roles)
+  const [showAddItemForm, setShowAddItemForm] = useState(canManageInventory);
   const [newItemCode, setNewItemCode] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemUom, setNewItemUom] = useState('PC/s');
@@ -146,7 +147,41 @@ export function TransfersAndSettingsModule({
     setNewItemTag('MECH');
     setNewItemLocation('');
     setNewItemQty(0);
-    setShowAddItemForm(false);
+  };
+
+  const handleUploadInventoryCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !setStock) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || '');
+      const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const parsed: WarehouseStock[] = [];
+      lines.forEach((line, idx) => {
+        const cols = line.split(',').map((c) => c.trim().replace(/^"|"$/g, ''));
+        if (idx === 0 && cols[0]?.toLowerCase().includes('code')) return;
+        if (!cols[0] || !cols[1]) return;
+        parsed.push({
+          id: `stk-csv-${Date.now()}-${idx}`,
+          itemCode: cols[0].toUpperCase(),
+          description: cols[1],
+          uom: cols[2] || 'PC/s',
+          systemTag: cols[3] || 'MECH',
+          assignedLocation: cols[4] || 'Central Warehouse',
+          availableStock: Number(cols[5]) || 0,
+          reservedStock: 0,
+        });
+      });
+      if (parsed.length > 0) {
+        setStock((prev) => [...prev, ...parsed]);
+        if (onAddLog) {
+          onAddLog('Inventory', file.name, 'CSV Bulk Upload', `Imported ${parsed.length} item(s) to inventory.`);
+        }
+        notify(`Imported ${parsed.length} item(s) from ${file.name}.`);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const notify = (msg: string) => {
@@ -632,12 +667,18 @@ export function TransfersAndSettingsModule({
 
           <div className="flex items-center gap-2 flex-wrap">
             {canManageInventory && (
-              <button
-                onClick={() => setShowAddItemForm((v) => !v)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#e7f1ff] hover:bg-[#d0e6ff] text-[#004a99] border border-[#b3d1ff] rounded-[2px] text-[11px] font-semibold cursor-pointer"
-              >
-                <Plus className="w-3 h-3" /> Add Item to Inventory
-              </button>
+              <>
+                <button
+                  onClick={() => setShowAddItemForm((v) => !v)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#e7f1ff] hover:bg-[#d0e6ff] text-[#004a99] border border-[#b3d1ff] rounded-[2px] text-[11px] font-semibold cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" /> {showAddItemForm ? 'Hide Item Input' : 'Add Item to Inventory'}
+                </button>
+                <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-semibold cursor-pointer">
+                  <Upload className="w-3 h-3 text-[#137333]" /> Upload CSV
+                  <input type="file" accept=".csv" onChange={handleUploadInventoryCsv} className="hidden" />
+                </label>
+              </>
             )}
 
             {/* System Filter */}
