@@ -620,11 +620,26 @@ export function NewRequestModal({
                           className="w-full h-6 text-[11px] border border-[#cfd5dc] rounded-[2px] px-1 bg-[#fafbfd]"
                         >
                           <option value="">-- Pick Item --</option>
-                          {stock.map((s) => (
-                            <option key={s.id} value={s.itemCode}>
-                              {s.itemCode} (Stock: {s.availableStock})
-                            </option>
-                          ))}
+                          {stock.map((s) => {
+                            if (requestType === 'PR') {
+                              const pqtoMatch = activePqto?.items.find(
+                                (p) => p.itemCode.trim().toLowerCase() === s.itemCode.trim().toLowerCase()
+                              );
+                              const pqtoRem = pqtoMatch
+                                ? Math.max(0, pqtoMatch.pqtoQty - pqtoMatch.prOrderedQty)
+                                : null;
+                              return (
+                                <option key={s.id} value={s.itemCode}>
+                                  {s.itemCode} ({pqtoRem !== null ? `PQTO Rem: ${pqtoRem}` : 'New Item'} | Whse: {s.availableStock})
+                                </option>
+                              );
+                            }
+                            return (
+                              <option key={s.id} value={s.itemCode}>
+                                {s.itemCode} (Whse Stock: {s.availableStock})
+                              </option>
+                            );
+                          })}
                         </select>
                       </td>
                       <td className="p-0 excel-cell border-r border-[#e5e8ec]">
