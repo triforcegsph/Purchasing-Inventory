@@ -25,6 +25,7 @@ import type {
   WithdrawalRecord,
 } from '../types/erp';
 import { StatusBadge } from './SharedUI';
+import { parseSpreadsheetFile, pickCell } from '../utils/excelUpload';
 
 interface TransfersAndSettingsProps {
   stock: WarehouseStock[];
@@ -149,39 +150,49 @@ export function TransfersAndSettingsModule({
     setNewItemQty(0);
   };
 
-  const handleUploadInventoryCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadInventoryCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !setStock) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result || '');
-      const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    try {
+      const { rows } = await parseSpreadsheetFile(file);
       const parsed: WarehouseStock[] = [];
-      lines.forEach((line, idx) => {
-        const cols = line.split(',').map((c) => c.trim().replace(/^"|"$/g, ''));
-        if (idx === 0 && cols[0]?.toLowerCase().includes('code')) return;
-        if (!cols[0] || !cols[1]) return;
+      rows.forEach((row, idx) => {
+        const itemCode = pickCell(row, ['itemcode', 'code', 'item']);
+        const description = pickCell(row, ['description', 'longdescription', 'desc', 'itemdescription', 'shortheading']);
+        if (!itemCode || !description) return;
+        const uom = pickCell(row, ['uom', 'baseitemunit', 'unitofpurchase']) || 'PC/s';
+        const systemTag =
+          pickCell(row, ['systemtag', 'system', 'commoditycode', 'lookupcode']) || 'MECH';
+        const assignedLocation =
+          pickCell(row, ['assignedlocation', 'defaultlocationid', 'location']) || 'Central Warehouse';
+        const availableStock = Number(pickCell(row, ['availablestock', 'stock', 'qty', 'openingstock'])) || 0;
+
         parsed.push({
-          id: `stk-csv-${Date.now()}-${idx}`,
-          itemCode: cols[0].toUpperCase(),
-          description: cols[1],
-          uom: cols[2] || 'PC/s',
-          systemTag: cols[3] || 'MECH',
-          assignedLocation: cols[4] || 'Central Warehouse',
-          availableStock: Number(cols[5]) || 0,
+          id: `stk-xl-${Date.now()}-${idx}`,
+          itemCode: itemCode.toUpperCase(),
+          description,
+          uom,
+          systemTag,
+          assignedLocation,
+          availableStock,
           reservedStock: 0,
         });
       });
+
       if (parsed.length > 0) {
         setStock((prev) => [...prev, ...parsed]);
         if (onAddLog) {
-          onAddLog('Inventory', file.name, 'CSV Bulk Upload', `Imported ${parsed.length} item(s) to inventory.`);
+          onAddLog('Inventory', file.name, 'Excel/CSV Upload', `Imported ${parsed.length} item(s) to inventory.`);
         }
         notify(`Imported ${parsed.length} item(s) from ${file.name}.`);
+      } else {
+        notify('No valid item rows found in the uploaded file.');
       }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+    } catch {
+      notify('Could not read file. Please upload a valid .xlsx, .xls, or .csv file.');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const notify = (msg: string) => {
@@ -675,8 +686,8 @@ export function TransfersAndSettingsModule({
                   <Plus className="w-3 h-3" /> {showAddItemForm ? 'Hide Item Input' : 'Add Item to Inventory'}
                 </button>
                 <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-semibold cursor-pointer">
-                  <Upload className="w-3 h-3 text-[#137333]" /> Upload CSV
-                  <input type="file" accept=".csv" onChange={handleUploadInventoryCsv} className="hidden" />
+                  <Upload className="w-3 h-3 text-[#137333]" /> Upload Excel / CSV
+                  <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUploadInventoryCsv} className="hidden" />
                 </label>
               </>
             )}

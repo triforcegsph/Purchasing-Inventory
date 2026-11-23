@@ -18,6 +18,7 @@ import type { BoqItem } from '../types/erp';
 import { ITEMIZED_FITTINGS_PRESET } from '../data/seedData';
 import { StatusBadge } from './SharedUI';
 import { BoqPrintModal } from './BoqPrintModal';
+import { parseSpreadsheetFile, pickCell } from '../utils/excelUpload';
 
 interface BoqModuleProps {
   items: BoqItem[];
@@ -107,87 +108,36 @@ export function BoqModule({
     notify('Copied sample BOQ line item.');
   };
 
-  const handleUploadCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-      notify('Excel files must be saved as CSV first. In Excel: File → Save As → CSV (Comma delimited).');
-      e.target.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (!text) return;
-
-      const lines = text.split(/\r?\n/).filter((l) => l.trim());
-      if (lines.length < 2) {
-        notify('CSV file is empty or has only a header row.');
+    try {
+      const { rows } = await parseSpreadsheetFile(file);
+      if (rows.length === 0) {
+        notify('Spreadsheet is empty or has no data rows.');
         e.target.value = '';
         return;
       }
 
-      const parseRow = (row: string): string[] => {
-        const result: string[] = [];
-        let current = '';
-        let inQuotes = false;
-        for (let i = 0; i < row.length; i++) {
-          const ch = row[i];
-          if (ch === '"') {
-            inQuotes = !inQuotes;
-          } else if (ch === ',' && !inQuotes) {
-            result.push(current.trim());
-            current = '';
-          } else {
-            current += ch;
-          }
-        }
-        result.push(current.trim());
-        return result;
-      };
-
-      const headers = parseRow(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
-      const col = (candidates: string[]) => {
-        for (const c of candidates) {
-          const idx = headers.indexOf(c);
-          if (idx !== -1) return idx;
-        }
-        return -1;
-      };
-
-      const ci = col(['itemcode', 'code', 'item']);
-      const cd = col(['description', 'desc', 'itemdescription']);
-      const cbu = col(['boquom', 'boqunit', 'uom']);
-      const cbq = col(['boqqty', 'boqquantity', 'qty']);
-      const cpu = col(['pqtouom', 'pqtounit', 'pquom']);
-      const cpq = col(['pqtoqty', 'pqtoquantity']);
-      const cl = col(['assignedlocation', 'location', 'zone', 'area']);
-      const cc = col(['costcenter', 'cost', 'cc']);
-      const cr = col(['remarks', 'notes', 'note']);
-
       const newItems: BoqItem[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cells = parseRow(lines[i]);
-        if (cells.every((c) => !c)) continue;
+      rows.forEach((row, i) => {
+        const itemCode = pickCell(row, ['itemcode', 'code', 'item']);
+        const description = pickCell(row, ['description', 'longdescription', 'desc', 'itemdescription', 'shortheading']);
+        if (!itemCode && !description) return;
 
-        const itemCode = ci >= 0 ? cells[ci] || '' : cells[0] || '';
-        const description = cd >= 0 ? cells[cd] || '' : cells[1] || '';
-        if (!itemCode && !description) continue;
-
-        const boqUomRaw = cbu >= 0 ? cells[cbu] : cells[2] || '';
-        const boqUom = ['lot', 'm', 'PC/s'].includes(boqUomRaw) ? boqUomRaw : 'lot';
-        const boqQty = Number(cbq >= 0 ? cells[cbq] : cells[3]) || 1;
-        const pqtoUomRaw = cpu >= 0 ? cells[cpu] : cells[4] || '';
-        const pqtoUom = ['PC/s', 'lot', 'm'].includes(pqtoUomRaw) ? pqtoUomRaw : 'PC/s';
-        const pqtoQty = Number(cpq >= 0 ? cells[cpq] : cells[5]) || 0;
-        const assignedLocation = cl >= 0 ? cells[cl] || '' : cells[6] || '';
-        const costCenter = cc >= 0 ? cells[cc] || '' : cells[7] || '';
-        const remarks = cr >= 0 ? cells[cr] || '' : cells[8] || '';
+        const boqUomRaw = pickCell(row, ['boquom', 'boqunit', 'uom', 'baseitemunit']);
+        const boqUom = boqUomRaw || 'PC/s';
+        const boqQty = Number(pickCell(row, ['boqqty', 'boqquantity', 'qty'])) || 1;
+        const pqtoUomRaw = pickCell(row, ['pqtouom', 'pqtounit', 'pquom', 'unitofpurchase', 'baseitemunit', 'uom']);
+        const pqtoUom = pqtoUomRaw || 'PC/s';
+        const pqtoQty = Number(pickCell(row, ['pqtoqty', 'pqtoquantity'])) || boqQty;
+        const assignedLocation = pickCell(row, ['assignedlocation', 'defaultlocationid', 'location', 'zone', 'area']);
+        const costCenter = pickCell(row, ['costcenter', 'cost', 'cc', 'commoditycode']);
+        const remarks = pickCell(row, ['remarks', 'notes', 'note', 'lookupcode']);
 
         newItems.push({
-          id: `boq-csv-${Date.now()}-${i}`,
+          id: `boq-xl-${Date.now()}-${i}`,
           lineNo: items.length + newItems.length + 1,
           itemCode,
           description,
@@ -199,10 +149,10 @@ export function BoqModule({
           ...(costCenter ? { costCenter } : {}),
           ...(remarks ? { remarks } : {}),
         });
-      }
+      });
 
       if (newItems.length === 0) {
-        notify('No valid rows found in the CSV. Download the template to check the format.');
+        notify('No valid item rows found. Check that Item Code / Description columns are present.');
         e.target.value = '';
         return;
       }
@@ -210,10 +160,11 @@ export function BoqModule({
       setItems((prev) => [...prev, ...newItems]);
       onAddLog('BOQ', 'BOQ-2026-001', 'BOQ Upload', `Imported ${newItems.length} item(s) from ${file.name}.`);
       notify(`Imported ${newItems.length} item(s) from "${file.name}".`);
+    } catch {
+      notify('Could not read file. Please upload a valid .xlsx, .xls, or .csv file.');
+    } finally {
       e.target.value = '';
-    };
-
-    reader.readAsText(file);
+    }
   };
 
   const handleAddMaterialRow = () => {
@@ -354,8 +305,8 @@ export function BoqModule({
               </button>
 
               <label className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer">
-                <Upload className="w-3 h-3 text-[#137333]" /> Upload CSV
-                <input type="file" accept=".csv" onChange={handleUploadCsv} className="hidden" />
+                <Upload className="w-3 h-3 text-[#137333]" /> Upload Excel / CSV
+                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUploadCsv} className="hidden" />
               </label>
 
               <button
