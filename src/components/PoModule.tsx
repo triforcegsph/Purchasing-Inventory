@@ -86,6 +86,11 @@ export function PoModule({
       return;
     }
 
+    const carriedAttachments = [
+      ...selectedPr.attachments,
+      ...attachments.filter((a) => !selectedPr.attachments.some((pa) => pa.id === a.id)),
+    ];
+
     const poNo = `PO-2026-${Math.floor(Math.random() * 500 + 460)}`;
     const newPo: PoRecord = {
       id: `po-${Date.now()}`,
@@ -99,7 +104,7 @@ export function PoModule({
       spName,
       status: 'Pending Approval',
       createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-      attachments,
+      attachments: carriedAttachments,
       items: selectedPr.items.map((it, idx) => ({
         id: `po-it-${Date.now()}-${idx}`,
         itemCode: it.itemCode,

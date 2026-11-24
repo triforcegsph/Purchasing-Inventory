@@ -14,7 +14,7 @@ import type {
   RequiredFieldConfig,
   WarehouseStock,
 } from '../types/erp';
-import { AttachmentUploader, StatusBadge, SummaryReportModal } from './SharedUI';
+import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge, SummaryReportModal } from './SharedUI';
 import { PoPrintModal } from './PoPrintModal';
 
 interface ReceivingModuleProps {
@@ -46,6 +46,7 @@ export function ReceivingModule({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   const [printPo, setPrintPo] = useState<PoRecord | null>(null);
+  const [viewingAttachments, setViewingAttachments] = useState<{ docNo: string; attachments: FileAttachment[] } | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -322,7 +323,23 @@ export function ReceivingModule({
           </div>
         )}
 
-        <div className="p-3">
+        <div className="p-3 space-y-2.5">
+          {activePo && activePo.attachments.length > 0 && (
+            <div className="bg-[#f4f8ff] border border-[#b3d1ff] rounded-[2px] px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="text-[#004a99] font-medium">
+                PO / Requestor Files attached to {activePo.poNo} ({activePo.attachments.length} file(s)):
+              </span>
+              <AttachmentCellButton
+                attachments={activePo.attachments}
+                onOpen={() =>
+                  setViewingAttachments({
+                    docNo: `${activePo.poNo} (PO & Requestor Attachments)`,
+                    attachments: activePo.attachments,
+                  })
+                }
+              />
+            </div>
+          )}
           <AttachmentUploader
             attachments={attachments}
             required={config.attachments}
@@ -413,6 +430,14 @@ export function ReceivingModule({
             r.status,
           ])}
           onClose={() => setShowSummary(false)}
+        />
+      )}
+
+      {viewingAttachments && (
+        <AttachmentViewerModal
+          docNo={viewingAttachments.docNo}
+          attachments={viewingAttachments.attachments}
+          onClose={() => setViewingAttachments(null)}
         />
       )}
 
