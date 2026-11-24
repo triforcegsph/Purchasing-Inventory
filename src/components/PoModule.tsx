@@ -256,11 +256,27 @@ export function PoModule({
           </div>
         )}
 
-        <div className="p-3">
+        <div className="p-3 space-y-2.5">
+          {selectedPr && selectedPr.attachments.length > 0 && (
+            <div className="bg-[#f4f8ff] border border-[#b3d1ff] rounded-[2px] px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="text-[#004a99] font-medium">
+                Requestor ({selectedPr.applicant}) attached <strong>{selectedPr.attachments.length}</strong> file(s) on {selectedPr.prNo}.
+              </span>
+              <AttachmentCellButton
+                attachments={selectedPr.attachments}
+                onOpen={() =>
+                  setViewingAttachments({
+                    docNo: `${selectedPr.prNo} (Requestor Attachments)`,
+                    attachments: selectedPr.attachments,
+                  })
+                }
+              />
+            </div>
+          )}
           <AttachmentUploader
             attachments={attachments}
             required={false}
-            label="Attachments (PDF, JPG, PNG, XLSX) — Optional"
+            label="Additional PO Attachments (PDF, JPG, PNG, XLSX) — Optional"
             onAdd={(f) => setAttachments((prev) => [...prev, f])}
             onRemove={(id) => setAttachments((prev) => prev.filter((a) => a.id !== id))}
           />
@@ -309,10 +325,25 @@ export function PoModule({
                   </td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{po.vendor}</td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
-                    <AttachmentCellButton
-                      attachments={po.attachments}
-                      onOpen={() => setViewingAttachments({ docNo: po.poNo, attachments: po.attachments })}
-                    />
+                    {(() => {
+                      const linkedPr = prs.find((p) => p.prNo === po.prNo);
+                      const prFiles = linkedPr?.attachments || [];
+                      const merged = [
+                        ...po.attachments,
+                        ...prFiles.filter((pf) => !po.attachments.some((a) => a.id === pf.id)),
+                      ];
+                      return (
+                        <AttachmentCellButton
+                          attachments={merged}
+                          onOpen={() =>
+                            setViewingAttachments({
+                              docNo: `${po.poNo} / ${po.prNo} Files`,
+                              attachments: merged,
+                            })
+                          }
+                        />
+                      );
+                    })()}
                   </td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec] space-y-0.5">
                     <StatusBadge status={po.status} />
