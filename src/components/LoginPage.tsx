@@ -100,6 +100,10 @@ export function LoginPage({ accounts = SYSTEM_ACCOUNTS, onLogin }: LoginPageProp
       setError('Invalid credentials. Please check your account email and password.');
       return;
     }
+    if (match.status === 'Suspended') {
+      setError('This account is currently suspended. Contact System Admin to reactivate.');
+      return;
+    }
     onLogin(match);
   };
 

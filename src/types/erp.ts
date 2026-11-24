@@ -6,6 +6,21 @@ export type UserRole =
   | 'Purchaser'
   | 'Admin';
 
+export interface UserGroup {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  allowedModules: ModuleKey[];
+  permissions: {
+    canCreate: boolean;
+    canApprove: boolean;
+    canReject: boolean;
+    canManageStock: boolean;
+    canExportReports: boolean;
+  };
+}
+
 export interface UserAccount {
   id: string;
   username: string;
@@ -14,6 +29,10 @@ export interface UserAccount {
   role: UserRole;
   department: string;
   allowedModules?: ModuleKey[];
+  groupId?: string;
+  status?: 'Active' | 'Suspended';
+  businessUnitAccess?: 'ALL' | 'PROJ-TWRB' | 'PROJ-CIVIL1';
+  maxPendingRequests?: number;
 }
 
 export type ModuleKey =

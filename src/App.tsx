@@ -34,6 +34,7 @@ import type {
   StockTransferRecord,
   TransactionLog,
   UserAccount,
+  UserGroup,
   UserRole,
   WarehouseStock,
   WithdrawalRecord,
@@ -66,7 +67,7 @@ import { NewRequestModal } from './components/NewRequestModal';
 import { MyRequestsModal } from './components/MyRequestsModal';
 import { LoginPage, SYSTEM_ACCOUNTS } from './components/LoginPage';
 import { TrackingModule } from './components/TrackingModule';
-import { UserManagerModule } from './components/UserManagerModule';
+import { DEFAULT_USER_GROUPS, UserManagerModule } from './components/UserManagerModule';
 
 interface NavGroup {
   group: string;
@@ -155,6 +156,7 @@ function useCachedState<T>(key: string, defaultValue: T): [T, React.Dispatch<Rea
 
 export function App() {
   const [accounts, setAccounts] = useCachedState<UserAccount[]>('accounts', SYSTEM_ACCOUNTS);
+  const [groups, setGroups] = useCachedState<UserGroup[]>('userGroups', DEFAULT_USER_GROUPS);
   const [currentUser, setCurrentUser] = useCachedState<UserAccount | null>('currentUser', null);
   const [activeModule, setActiveModule] = useCachedState<ModuleKey>('activeModule', 'boq');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -167,7 +169,7 @@ export function App() {
   const activeRole: UserRole = liveUser?.role || 'Applicant/Requestor';
   const currentFullName = liveUser?.fullName || 'Engr. John Doe';
   const isRequestor = activeRole === 'Applicant/Requestor';
-  const MAX_PENDING_REQUESTS = 3;
+  const MAX_PENDING_REQUESTS = liveUser?.maxPendingRequests ?? 3;
 
   // Core ERP State (Persisted to Browser Cache DB)
   const [boqItems, setBoqItems] = useCachedState<BoqItem[]>('boqItems', INITIAL_BOQ_ITEMS);
@@ -194,6 +196,7 @@ export function App() {
     }
     setBusinessUnit('PROJ-TWRB');
     setAccounts(SYSTEM_ACCOUNTS);
+    setGroups(DEFAULT_USER_GROUPS);
     setActiveModule(currentUser ? ROLE_DEFAULT_MODULE[currentUser.role] : 'boq');
     setBoqItems(INITIAL_BOQ_ITEMS);
     setBoqStatus('Draft');
@@ -233,8 +236,16 @@ export function App() {
 
   const handleLogin = (account: UserAccount) => {
     setCurrentUser(account);
+    if (account.businessUnitAccess && account.businessUnitAccess !== 'ALL') {
+      setBusinessUnit(account.businessUnitAccess);
+    }
     const defaultMod = ROLE_DEFAULT_MODULE[account.role];
-    const mods = account.allowedModules?.length ? account.allowedModules : ROLE_MODULES[account.role];
+    const grp = groups.find((g) => g.id === account.groupId);
+    const mods = account.allowedModules?.length
+      ? account.allowedModules
+      : grp?.allowedModules?.length
+      ? grp.allowedModules
+      : ROLE_MODULES[account.role];
     setActiveModule(mods.includes(defaultMod) ? defaultMod : mods[0]);
     addLog('System', account.role, 'User Signed In', `${account.fullName} (${account.username}) logged in.`);
   };
@@ -246,9 +257,12 @@ export function App() {
     setCurrentUser(null);
   };
 
+  const liveGroup = liveUser?.groupId ? groups.find((g) => g.id === liveUser.groupId) : undefined;
   const allowedModules =
     liveUser?.allowedModules && liveUser.allowedModules.length > 0
       ? liveUser.allowedModules
+      : liveGroup?.allowedModules?.length
+      ? liveGroup.allowedModules
       : ROLE_MODULES[activeRole];
   const visibleNavGroups = NAV_GROUPS.map((g) => ({
     ...g,
@@ -965,6 +979,8 @@ export function App() {
               <UserManagerModule
                 accounts={accounts}
                 setAccounts={setAccounts}
+                groups={groups}
+                setGroups={setGroups}
                 roleDefaults={ROLE_MODULES}
                 currentUserId={liveUser.id}
                 onAddLog={addLog}

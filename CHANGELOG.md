@@ -1,8 +1,8 @@
 # Update Logs — Purchasing & Inventory System
 
 ## 2026-11-24
-- **User Manager (`USR`)**:
-  - Added [UserManagerModule.tsx](src/components/UserManagerModule.tsx) under `Admin` to create user accounts, change roles, and customize per-user module access (`BOQ`, `PQTO`, `PR`, `PO`, `RCV`, `WD`, `OTH`, `TRK`, `LOG`, `USR`).
+- **SunSystems-Style User Manager (`USR`)**:
+  - Upgraded [UserManagerModule.tsx](src/components/UserManagerModule.tsx) with **Users**, **User Groups** (create/edit custom security groups with module & action permissions and sync to members), and **Security Access Matrix** tabs, plus account **Active/Suspended** status, **Business Unit** assignment, **Max Pending Requests** override, and password reset.
 - **End-to-End Attachment Carryover (`af74316`)**:
   - Carried Requestor PR attachments automatically into generated POs and displayed them in `PO` and `RCV` before approval/receiving.
 - **Simplified Requestor Interface (`e790688`, `74bb9e4`, `6ffbca7`)**:
