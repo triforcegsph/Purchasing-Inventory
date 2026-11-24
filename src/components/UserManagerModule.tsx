@@ -126,9 +126,8 @@ export function UserManagerModule({
   const [role, setRole] = useState<UserRole>('Applicant/Requestor');
   const [groupId, setGroupId] = useState('grp-req');
   const [department, setDepartment] = useState('');
-  const [businessUnitAccess, setBusinessUnitAccess] = useState<'ALL' | 'PROJ-TWRB' | 'PROJ-CIVIL1'>('ALL');
-  const [maxPendingRequests, setMaxPendingRequests] = useState(3);
   const [newModules, setNewModules] = useState<ModuleKey[]>(DEFAULT_USER_GROUPS[0].allowedModules);
+  const [showCreateUser, setShowCreateUser] = useState(false);
 
   // Create Group form state
   const [grpCode, setGrpCode] = useState('');
@@ -195,8 +194,6 @@ export function UserManagerModule({
       role,
       groupId,
       status: 'Active',
-      businessUnitAccess,
-      maxPendingRequests: Math.max(1, maxPendingRequests),
       department: department.trim() || 'Operations',
       allowedModules: [...newModules],
     };
@@ -213,6 +210,7 @@ export function UserManagerModule({
     setUsername('');
     setPassword('1234');
     setDepartment('');
+    setShowCreateUser(false);
   };
 
   const assignUserGroup = (userId: string, nextGroupId: string) => {
@@ -376,22 +374,32 @@ export function UserManagerModule({
       {/* ========================================================= */}
       {activeTab === 'users' && (
         <>
+          {showCreateUser && (
           <form onSubmit={handleCreateUser} className="bg-white border border-[#cfd5dc] rounded-[2px]">
             <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex items-center justify-between gap-2">
               <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328] flex items-center gap-1.5">
                 <UserPlus className="w-3.5 h-3.5 text-[#0072ed]" />
                 Create User &amp; Assign Group / Access
               </span>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1 px-3 py-1 bg-[#0072ed] hover:bg-[#005ec4] text-white text-xs font-semibold rounded-[2px] cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add User
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateUser(false)}
+                  className="px-2.5 py-1 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] text-xs font-semibold rounded-[2px] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-[#0072ed] hover:bg-[#005ec4] text-white text-xs font-semibold rounded-[2px] cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add User
+                </button>
+              </div>
             </div>
 
             <div className="p-3 space-y-2.5 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                 <div>
                   <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">
                     Full Name <span className="text-[#d5002b]">*</span>
@@ -461,29 +469,6 @@ export function UserManagerModule({
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">Business Unit Access</label>
-                  <select
-                    value={businessUnitAccess}
-                    onChange={(e) => setBusinessUnitAccess(e.target.value as typeof businessUnitAccess)}
-                    className="w-full h-7 px-2 border border-[#b9c0c8] rounded-[2px] bg-white"
-                  >
-                    <option value="ALL">All Business Units</option>
-                    <option value="PROJ-TWRB">PROJ-TWRB Only</option>
-                    <option value="PROJ-CIVIL1">PROJ-CIVIL1 Only</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">Max Pending Requests</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={maxPendingRequests}
-                    onChange={(e) => setMaxPendingRequests(Number(e.target.value))}
-                    className="w-full h-7 px-2 border border-[#b9c0c8] rounded-[2px] bg-white text-right font-semibold"
-                  />
-                </div>
               </div>
 
               <div className="bg-[#fafbfd] border border-[#d5dbe2] rounded-[2px] p-2.5">
@@ -521,20 +506,31 @@ export function UserManagerModule({
               </div>
             </div>
           </form>
+          )}
 
           <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
-            <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] text-xs font-bold uppercase tracking-wide text-[#1f2328]">
-              User Directory ({accounts.length} Accounts)
+            <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+                User Directory ({accounts.length} Accounts)
+              </span>
+              {!showCreateUser && (
+                <button
+                  type="button"
+                  onClick={() => setShowCreateUser(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#0072ed] hover:bg-[#005ec4] text-white text-xs font-semibold rounded-[2px] cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> + New User
+                </button>
+              )}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-[#eef2f6] border-b border-[#cfd5dc] text-[#2d3339]">
-                    <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">User</th>
-                    <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] w-44">Group &amp; Role</th>
-                    <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2] w-36">BU / Limit / Status</th>
-                    <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Allowed Modules</th>
-                    <th className="px-2.5 py-1.5 font-semibold text-right w-28">Actions</th>
+                    <th className="px-3 py-2 font-semibold border-r border-[#d5dbe2] w-56">User</th>
+                    <th className="px-3 py-2 font-semibold border-r border-[#d5dbe2] w-52">Group &amp; Role</th>
+                    <th className="px-3 py-2 font-semibold border-r border-[#d5dbe2]">Allowed Modules</th>
+                    <th className="px-3 py-2 font-semibold text-right w-32">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#d5dbe2]">
@@ -592,58 +588,7 @@ export function UserManagerModule({
                             ))}
                           </select>
                         </td>
-                        <td className="px-2.5 py-2 border-r border-[#e5e8ec] align-top space-y-1.5">
-                          <select
-                            value={acc.businessUnitAccess || 'ALL'}
-                            onChange={(e) =>
-                              updateUserField(
-                                acc.id,
-                                { businessUnitAccess: e.target.value as UserAccount['businessUnitAccess'] },
-                                `${acc.fullName} BU access set to ${e.target.value}`
-                              )
-                            }
-                            className="w-full h-6 px-1 text-[11px] border border-[#cfd5dc] rounded-[2px] bg-white"
-                          >
-                            <option value="ALL">All BUs</option>
-                            <option value="PROJ-TWRB">PROJ-TWRB</option>
-                            <option value="PROJ-CIVIL1">PROJ-CIVIL1</option>
-                          </select>
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-[#5c646d]">Max Pend:</span>
-                            <input
-                              type="number"
-                              min={1}
-                              max={50}
-                              value={acc.maxPendingRequests ?? 3}
-                              onChange={(e) =>
-                                updateUserField(acc.id, { maxPendingRequests: Math.max(1, Number(e.target.value)) })
-                              }
-                              className="w-12 h-6 px-1 text-[11px] border border-[#cfd5dc] rounded-[2px] text-right font-mono"
-                            />
-                          </div>
-                          {!isProtected && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const next = isSuspended ? 'Active' : 'Suspended';
-                                updateUserField(
-                                  acc.id,
-                                  { status: next },
-                                  `${acc.fullName} account ${next}`
-                                );
-                                notify(`${acc.fullName} is now ${next}.`);
-                              }}
-                              className={`w-full py-0.5 text-[10.5px] font-semibold rounded-[2px] border cursor-pointer ${
-                                isSuspended
-                                  ? 'bg-[#e6f4ea] text-[#137333] border-[#a8dab5]'
-                                  : 'bg-[#fef7e0] text-[#b06000] border-[#f6dfa4]'
-                              }`}
-                            >
-                              {isSuspended ? 'Reactivate' : 'Suspend'}
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-2.5 py-2 border-r border-[#e5e8ec] align-top">
+                        <td className="px-3 py-2 border-r border-[#e5e8ec] align-top">
                           <div className="flex flex-wrap gap-1">
                             {MODULE_OPTIONS.map((m) => {
                               const checked = effectiveMods.includes(m.key);
@@ -934,10 +879,8 @@ export function UserManagerModule({
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#eef2f6] border-b border-[#cfd5dc] text-[#2d3339]">
-                  <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">User</th>
-                  <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Group</th>
-                  <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">BU</th>
-                  <th className="px-2.5 py-1.5 font-semibold border-r border-[#d5dbe2]">Status</th>
+                  <th className="px-3 py-2 font-semibold border-r border-[#d5dbe2]">User</th>
+                  <th className="px-3 py-2 font-semibold border-r border-[#d5dbe2]">Group</th>
                   {MODULE_OPTIONS.map((m) => (
                     <th key={m.key} className="px-2 py-1.5 font-mono text-[10.5px] text-center border-r border-[#d5dbe2]">
                       {m.code}
@@ -954,22 +897,8 @@ export function UserManagerModule({
                       <td className="px-2.5 py-1.5 border-r border-[#e5e8ec] font-semibold">
                         {acc.fullName}
                       </td>
-                      <td className="px-2.5 py-1.5 border-r border-[#e5e8ec] font-mono text-[11px] text-[#005ec4]">
+                      <td className="px-3 py-2 border-r border-[#e5e8ec] font-mono text-[11px] text-[#005ec4]">
                         {grp?.code || '—'}
-                      </td>
-                      <td className="px-2.5 py-1.5 border-r border-[#e5e8ec] font-mono text-[11px]">
-                        {acc.businessUnitAccess || 'ALL'}
-                      </td>
-                      <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
-                        <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] ${
-                            acc.status === 'Suspended'
-                              ? 'bg-[#fce8e6] text-[#c5221f]'
-                              : 'bg-[#e6f4ea] text-[#137333]'
-                          }`}
-                        >
-                          {acc.status || 'Active'}
-                        </span>
                       </td>
                       {MODULE_OPTIONS.map((m) => (
                         <td key={m.key} className="px-2 py-1.5 text-center border-r border-[#e5e8ec]">
