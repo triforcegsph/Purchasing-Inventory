@@ -18,6 +18,7 @@ import {
   Search,
   ShoppingCart,
   UserCheck,
+  Users,
   X,
 } from 'lucide-react';
 import type {
@@ -63,8 +64,9 @@ import { TransfersAndSettingsModule } from './components/TransfersAndSettingsMod
 import { LogsModule } from './components/LogsModule';
 import { NewRequestModal } from './components/NewRequestModal';
 import { MyRequestsModal } from './components/MyRequestsModal';
-import { LoginPage } from './components/LoginPage';
+import { LoginPage, SYSTEM_ACCOUNTS } from './components/LoginPage';
 import { TrackingModule } from './components/TrackingModule';
+import { UserManagerModule } from './components/UserManagerModule';
 
 interface NavGroup {
   group: string;
@@ -104,6 +106,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'tracking', code: 'TRK', label: 'End-to-End Tracking', icon: Route },
       { key: 'logs', code: 'LOG', label: 'Transaction Logs', icon: History },
+      { key: 'users', code: 'USR', label: 'User Manager', icon: Users },
     ],
   },
 ];
@@ -116,7 +119,7 @@ const ROLE_MODULES: Record<UserRole, ModuleKey[]> = {
   'PO Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'Warehouse Manager': ['receiving', 'withdrawal', 'transfers', 'po', 'tracking', 'logs'],
   'Purchaser': ['boq', 'pqto', 'pr', 'po', 'transfers', 'tracking', 'logs'],
-  'Admin': ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'tracking', 'logs'],
+  'Admin': ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'tracking', 'logs', 'users'],
 };
 
 const ROLE_DEFAULT_MODULE: Record<UserRole, ModuleKey> = {
@@ -151,6 +154,7 @@ function useCachedState<T>(key: string, defaultValue: T): [T, React.Dispatch<Rea
 }
 
 export function App() {
+  const [accounts, setAccounts] = useCachedState<UserAccount[]>('accounts', SYSTEM_ACCOUNTS);
   const [currentUser, setCurrentUser] = useCachedState<UserAccount | null>('currentUser', null);
   const [activeModule, setActiveModule] = useCachedState<ModuleKey>('activeModule', 'boq');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -159,8 +163,9 @@ export function App() {
   const [businessUnit, setBusinessUnit] = useCachedState<string>('businessUnit', 'PROJ-TWRB');
   const [showNotifs, setShowNotifs] = useState(false);
 
-  const activeRole: UserRole = currentUser?.role || 'Applicant/Requestor';
-  const currentFullName = currentUser?.fullName || 'Engr. John Doe';
+  const liveUser = currentUser ? accounts.find((a) => a.id === currentUser.id) || currentUser : null;
+  const activeRole: UserRole = liveUser?.role || 'Applicant/Requestor';
+  const currentFullName = liveUser?.fullName || 'Engr. John Doe';
   const isRequestor = activeRole === 'Applicant/Requestor';
   const MAX_PENDING_REQUESTS = 3;
 
@@ -188,6 +193,7 @@ export function App() {
       // ignore storage errors
     }
     setBusinessUnit('PROJ-TWRB');
+    setAccounts(SYSTEM_ACCOUNTS);
     setActiveModule(currentUser ? ROLE_DEFAULT_MODULE[currentUser.role] : 'boq');
     setBoqItems(INITIAL_BOQ_ITEMS);
     setBoqStatus('Draft');
@@ -227,7 +233,9 @@ export function App() {
 
   const handleLogin = (account: UserAccount) => {
     setCurrentUser(account);
-    setActiveModule(ROLE_DEFAULT_MODULE[account.role]);
+    const defaultMod = ROLE_DEFAULT_MODULE[account.role];
+    const mods = account.allowedModules?.length ? account.allowedModules : ROLE_MODULES[account.role];
+    setActiveModule(mods.includes(defaultMod) ? defaultMod : mods[0]);
     addLog('System', account.role, 'User Signed In', `${account.fullName} (${account.username}) logged in.`);
   };
 
@@ -238,7 +246,10 @@ export function App() {
     setCurrentUser(null);
   };
 
-  const allowedModules = ROLE_MODULES[activeRole];
+  const allowedModules =
+    liveUser?.allowedModules && liveUser.allowedModules.length > 0
+      ? liveUser.allowedModules
+      : ROLE_MODULES[activeRole];
   const visibleNavGroups = NAV_GROUPS.map((g) => ({
     ...g,
     items: g.items
@@ -522,8 +533,8 @@ export function App() {
     : notifications;
   const unreadCount = visibleNotifications.filter((n) => !n.read).length;
 
-  if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} />;
+  if (!liveUser) {
+    return <LoginPage accounts={accounts} onLogin={handleLogin} />;
   }
 
   return (
@@ -607,7 +618,7 @@ export function App() {
           {/* Logged-In User & Sign Out */}
           <div className="flex items-center gap-1.5 bg-[#181a1e] px-2.5 py-1 border border-[#3c414a] rounded-xs text-xs">
             <UserCheck className="w-3.5 h-3.5 text-[#4da3ff]" />
-            <span className="font-medium text-white hidden md:inline">{currentUser.fullName}</span>
+            <span className="font-medium text-white hidden md:inline">{liveUser.fullName}</span>
             <span className="text-[10px] font-semibold px-1.5 py-0.2 bg-[#0072ed]/25 text-[#7ebbff] border border-[#0072ed]/40 rounded-[2px]">
               {activeRole}
             </span>
@@ -822,6 +833,8 @@ export function App() {
               'Track any order from start to finish (BOQ → PQTO → PR → PO → Receiving → Site Withdrawal) with live status steps.'}
             {activeModule === 'logs' &&
               'Audit trail of all actions, approvals, rejections, stock updates, and notifications across modules.'}
+            {activeModule === 'users' &&
+              'Create user accounts, assign roles, and customize exactly which modules each user can access.'}
           </div>
 
           {/* Active Form Canvas */}
@@ -947,6 +960,16 @@ export function App() {
             )}
 
             {activeModule === 'logs' && <LogsModule logs={logs} activeRole={activeRole} />}
+
+            {activeModule === 'users' && (
+              <UserManagerModule
+                accounts={accounts}
+                setAccounts={setAccounts}
+                roleDefaults={ROLE_MODULES}
+                currentUserId={liveUser.id}
+                onAddLog={addLog}
+              />
+            )}
           </main>
 
           {/* Footer Status Bar */}

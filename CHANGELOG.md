@@ -1,7 +1,11 @@
 # Update Logs — Purchasing & Inventory System
 
 ## 2026-11-24
-- **Simplified Requestor Interface**:
+- **User Manager (`USR`)**:
+  - Added [UserManagerModule.tsx](src/components/UserManagerModule.tsx) under `Admin` to create user accounts, change roles, and customize per-user module access (`BOQ`, `PQTO`, `PR`, `PO`, `RCV`, `WD`, `OTH`, `TRK`, `LOG`, `USR`).
+- **End-to-End Attachment Carryover (`af74316`)**:
+  - Carried Requestor PR attachments automatically into generated POs and displayed them in `PO` and `RCV` before approval/receiving.
+- **Simplified Requestor Interface (`e790688`, `74bb9e4`, `6ffbca7`)**:
   - Streamlined `Applicant/Requestor` navigation in [App.tsx](src/App.tsx) to 3 focused modules (`PR` Purchase Requisition, `WD` Withdrawal, `TRK` End-to-End Tracking), defaulting directly to `PR` and hiding the function-code jump bar for a cleaner workspace.
 - **Summary Report Access (User, Purchasing & Warehousing)** (`46d0514`):
   - Added **Summary Report** export/print modal to **Purchase Requisitions (`PR`)** ([PrModule.tsx](src/components/PrModule.tsx)), **My Requests** ([MyRequestsModal.tsx](src/components/MyRequestsModal.tsx)), and **Inventory Stock** ([TransfersAndSettingsModule.tsx](src/components/TransfersAndSettingsModule.tsx)) — complementing existing Summary Reports in `PO`, `RCV`, and `WD`.

@@ -13,6 +13,7 @@ export interface UserAccount {
   fullName: string;
   role: UserRole;
   department: string;
+  allowedModules?: ModuleKey[];
 }
 
 export type ModuleKey =
@@ -24,7 +25,8 @@ export type ModuleKey =
   | 'withdrawal'
   | 'transfers'
   | 'tracking'
-  | 'logs';
+  | 'logs'
+  | 'users';
 
 export interface FileAttachment {
   id: string;

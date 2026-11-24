@@ -77,10 +77,11 @@ export const SYSTEM_ACCOUNTS: UserAccount[] = [
 ];
 
 interface LoginPageProps {
+  accounts?: UserAccount[];
   onLogin: (account: UserAccount) => void;
 }
 
-export function LoginPage({ onLogin }: LoginPageProps) {
+export function LoginPage({ accounts = SYSTEM_ACCOUNTS, onLogin }: LoginPageProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +90,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     e.preventDefault();
     setError(null);
     const trimmedUser = username.trim().toLowerCase();
-    const match = SYSTEM_ACCOUNTS.find(
+    const match = accounts.find(
       (acc) =>
         (acc.username.toLowerCase() === trimmedUser ||
           acc.role.toLowerCase() === trimmedUser) &&
