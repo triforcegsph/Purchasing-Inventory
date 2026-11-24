@@ -243,11 +243,15 @@ export function App() {
     ...g,
     items: g.items
       .filter((it) => allowedModules.includes(it.key))
-      .map((it) =>
-        activeRole === 'Purchaser' && it.key === 'transfers'
-          ? { ...it, code: 'INV', label: 'Inventory & Cost' }
-          : it
-      ),
+      .map((it) => {
+        if (activeRole === 'Purchaser' && it.key === 'transfers') {
+          return { ...it, code: 'INV', label: 'Inventory & Cost' };
+        }
+        if (activeRole === 'Warehouse Manager' && it.key === 'transfers') {
+          return { ...it, label: 'Inventory & Transfers' };
+        }
+        return it;
+      }),
   })).filter((g) => g.items.length > 0);
 
   const visibleNavItems = visibleNavGroups.flatMap((g) => g.items);

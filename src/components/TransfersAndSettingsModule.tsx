@@ -64,6 +64,7 @@ export function TransfersAndSettingsModule({
   const canManageInventory =
     activeRole === 'Warehouse Manager' || activeRole === 'Admin' || activeRole === 'Purchaser';
   const isPurchaser = activeRole === 'Purchaser';
+  const isWarehouse = activeRole === 'Warehouse Manager';
   // Local SMTP state if parent doesn't provide setter
   const [localSmtp, setLocalSmtp] = useState<SmtpConfig>(
     smtpConfig || {
@@ -94,9 +95,10 @@ export function TransfersAndSettingsModule({
 
   // Section tab state
   const [activeSection, setActiveSection] = useState<'overview' | 'stock' | 'transfers' | 'rules'>(
-    isPurchaser ? 'stock' : 'overview'
+    isPurchaser || isWarehouse ? 'stock' : 'overview'
   );
   const [showStockSummary, setShowStockSummary] = useState(false);
+  const [showTransferSummary, setShowTransferSummary] = useState(false);
 
   // Stock Transfer state
   const [type, setType] = useState<'Stock Transfer' | 'Excess Return to Warehouse'>('Excess Return to Warehouse');
@@ -301,6 +303,12 @@ export function TransfersAndSettingsModule({
             isPurchaser
               ? ([
                   { key: 'stock', label: `Inventory Stock (${stock.length})` },
+                  { key: 'overview', label: 'Cost & Movements' },
+                ] as const)
+              : isWarehouse
+              ? ([
+                  { key: 'stock', label: `Inventory Stock (${stock.length})` },
+                  { key: 'transfers', label: `Stock Transfers (${transfers.length})` },
                   { key: 'overview', label: 'Cost & Movements' },
                 ] as const)
               : ([
@@ -1122,8 +1130,17 @@ export function TransfersAndSettingsModule({
 
       {/* Transfer & Return Register Table */}
       <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
-        <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] text-xs font-bold uppercase tracking-wide text-[#1f2328]">
-          Transfer &amp; Return Register ({transfers.length} Recorded)
+        <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex items-center justify-between gap-2">
+          <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+            Transfer &amp; Return Register ({transfers.length} Recorded)
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowTransferSummary(true)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-semibold cursor-pointer"
+          >
+            <FileBarChart2 className="w-3 h-3" /> Summary Report
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
@@ -1175,6 +1192,24 @@ export function TransfersAndSettingsModule({
             s.uom,
           ])}
           onClose={() => setShowStockSummary(false)}
+        />
+      )}
+
+      {showTransferSummary && (
+        <SummaryReportModal
+          title="Stock Transfers & Excess Returns"
+          headers={['Transfer No.', 'Type', 'Item', 'From', 'To', 'Qty', 'UOM', 'Reason']}
+          rows={transfers.map((t) => [
+            t.transferNo,
+            t.type,
+            `${t.itemCode} — ${t.description}`,
+            t.fromLocation,
+            t.toLocation,
+            String(t.qty),
+            t.uom,
+            t.reason,
+          ])}
+          onClose={() => setShowTransferSummary(false)}
         />
       )}
     </div>
