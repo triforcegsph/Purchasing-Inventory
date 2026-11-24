@@ -4,6 +4,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Copy,
+  FileBarChart2,
   FilePlus2,
   Plus,
   Search,
@@ -18,7 +19,7 @@ import type {
   RequiredFieldConfig,
   UserRole,
 } from '../types/erp';
-import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge } from './SharedUI';
+import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge, SummaryReportModal } from './SharedUI';
 
 interface PrModuleProps {
   pqtos: PqtoRecord[];
@@ -71,6 +72,7 @@ export function PrModule({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [viewingAttachments, setViewingAttachments] = useState<{ docNo: string; attachments: FileAttachment[] } | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
 
   const activePqto = pqtos.find((p) => p.pqtoNo === selectedPqtoNo) || pqtos[0];
 
@@ -227,6 +229,13 @@ export function PrModule({
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowSummary(true)}
+              className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-semibold cursor-pointer"
+            >
+              <FileBarChart2 className="w-3 h-3" /> Summary Report
+            </button>
             <label className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer">
               <Upload className="w-3 h-3 text-[#137333]" /> Activity Upload
               <input type="file" accept=".csv,.xlsx" onChange={handleActivityUpload} className="hidden" />
@@ -508,6 +517,24 @@ export function PrModule({
           docNo={viewingAttachments.docNo}
           attachments={viewingAttachments.attachments}
           onClose={() => setViewingAttachments(null)}
+        />
+      )}
+
+      {showSummary && (
+        <SummaryReportModal
+          title="Purchase Requisitions (PR)"
+          headers={['PR No.', 'PQTO No.', 'Ref Doc No.', 'Job No.', 'Applicant', 'Created At', 'Items', 'Status']}
+          rows={prs.map((pr) => [
+            pr.prNo,
+            pr.pqtoNo,
+            pr.refDocNo,
+            pr.jobNo,
+            pr.applicant,
+            pr.createdAt,
+            String(pr.items.length),
+            pr.status,
+          ])}
+          onClose={() => setShowSummary(false)}
         />
       )}
     </div>

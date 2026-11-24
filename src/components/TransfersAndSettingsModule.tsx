@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Boxes,
   CheckCircle2,
+  FileBarChart2,
   Mail,
   PackageCheck,
   PackageMinus,
@@ -24,7 +25,7 @@ import type {
   WarehouseStock,
   WithdrawalRecord,
 } from '../types/erp';
-import { StatusBadge } from './SharedUI';
+import { StatusBadge, SummaryReportModal } from './SharedUI';
 import { parseSpreadsheetFile, pickCell } from '../utils/excelUpload';
 
 interface TransfersAndSettingsProps {
@@ -95,6 +96,7 @@ export function TransfersAndSettingsModule({
   const [activeSection, setActiveSection] = useState<'overview' | 'stock' | 'transfers' | 'rules'>(
     isPurchaser ? 'stock' : 'overview'
   );
+  const [showStockSummary, setShowStockSummary] = useState(false);
 
   // Stock Transfer state
   const [type, setType] = useState<'Stock Transfer' | 'Excess Return to Warehouse'>('Excess Return to Warehouse');
@@ -677,6 +679,13 @@ export function TransfersAndSettingsModule({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setShowStockSummary(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#eef0f3] text-[#1f2328] border border-[#b9c0c8] rounded-[2px] text-[11px] font-semibold cursor-pointer"
+            >
+              <FileBarChart2 className="w-3 h-3" /> Summary Report
+            </button>
             {canManageInventory && (
               <>
                 <button
@@ -1150,6 +1159,23 @@ export function TransfersAndSettingsModule({
         </div>
       </div>
         </>
+      )}
+
+      {showStockSummary && (
+        <SummaryReportModal
+          title="Warehouse Inventory Stock"
+          headers={['Item Code', 'Description', 'System Tag', 'Location', 'Available Stock', 'Reserved', 'UOM']}
+          rows={filteredStock.map((s) => [
+            s.itemCode,
+            s.description,
+            s.systemTag,
+            s.assignedLocation,
+            String(s.availableStock),
+            String(s.reservedStock),
+            s.uom,
+          ])}
+          onClose={() => setShowStockSummary(false)}
+        />
       )}
     </div>
   );

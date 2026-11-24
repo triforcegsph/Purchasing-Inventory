@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   ArrowRight,
   ClipboardList,
+  FileBarChart2,
   PackageMinus,
   Search,
   ShoppingCart,
@@ -20,6 +21,7 @@ import {
   AttachmentCellButton,
   AttachmentViewerModal,
   StatusBadge,
+  SummaryReportModal,
   getPoStageLabel,
   getPrStageLabel,
   getWithdrawalStageLabel,
@@ -50,6 +52,7 @@ export function MyRequestsModal({
     docNo: string;
     attachments: FileAttachment[];
   } | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
 
   const q = query.trim().toLowerCase();
 
@@ -101,6 +104,13 @@ export function MyRequestsModal({
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSummary(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#32363e] hover:bg-[#3f444e] text-white border border-[#454b56] text-[11px] font-semibold rounded-[2px] cursor-pointer"
+            >
+              <FileBarChart2 className="w-3.5 h-3.5" /> Summary Report
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -376,6 +386,19 @@ export function MyRequestsModal({
           docNo={viewingAttachments.docNo}
           attachments={viewingAttachments.attachments}
           onClose={() => setViewingAttachments(null)}
+        />
+      )}
+
+      {showSummary && (
+        <SummaryReportModal
+          title={`Requests Summary (${activeRole})`}
+          headers={['Type', 'Document No.', 'Requester / Applicant', 'Reference', 'Date', 'Status']}
+          rows={[
+            ...filteredPrs.map((p) => ['PR', p.prNo, p.applicant, p.refDocNo, p.createdAt, p.status]),
+            ...filteredWithdrawals.map((w) => ['WD', w.wdNo, w.requestedBy, w.jobNo, w.performedAt, w.status]),
+            ...filteredPos.map((po) => ['PO', po.poNo, po.applicant, po.vendor, po.createdAt, po.status]),
+          ]}
+          onClose={() => setShowSummary(false)}
         />
       )}
     </div>
