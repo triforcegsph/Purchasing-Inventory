@@ -26,6 +26,9 @@ interface PrModuleProps {
   setPrs: React.Dispatch<React.SetStateAction<PrRecord[]>>;
   config: RequiredFieldConfig;
   activeRole: UserRole;
+  requesterName?: string;
+  pendingRequestCount?: number;
+  maxPendingRequests?: number;
   initialPqtoNo?: string;
   onApprovePr: (prId: string) => void;
   onNavigateToPo: (prNo: string) => void;
@@ -38,6 +41,9 @@ export function PrModule({
   setPrs,
   config,
   activeRole,
+  requesterName = 'Engr. John Doe',
+  pendingRequestCount = 0,
+  maxPendingRequests = 3,
   initialPqtoNo,
   onApprovePr,
   onNavigateToPo,
@@ -134,6 +140,12 @@ export function PrModule({
   const handleCreatePr = (asDraft: boolean) => {
     setErrorMsg(null);
     if (!asDraft) {
+      if (pendingRequestCount >= maxPendingRequests) {
+        setErrorMsg(
+          `Limit reached: You already have ${pendingRequestCount} Pending Approval requests (maximum ${maxPendingRequests} allowed). Wait for approval or save as Draft.`
+        );
+        return;
+      }
       if (config.refDocNo && !refDocNo.trim()) {
         setErrorMsg('Reference Document Number is required.');
         return;
@@ -163,7 +175,7 @@ export function PrModule({
       pqtoNo: activePqto?.pqtoNo || selectedPqtoNo,
       refDocNo,
       jobNo,
-      applicant: 'Engr. John Doe',
+      applicant: requesterName,
       spName,
       status: asDraft ? 'Draft' : 'Pending Approval',
       createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
@@ -200,9 +212,20 @@ export function PrModule({
 
       <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
         <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
-            PR — Purchase Requisition Entry
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+              PR — Purchase Requisition Entry
+            </span>
+            <span
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-[2px] border ${
+                pendingRequestCount >= maxPendingRequests
+                  ? 'bg-[#fce8e6] text-[#c5221f] border-[#f5c2c0]'
+                  : 'bg-[#e7f1ff] text-[#005ec4] border-[#b6d4fe]'
+              }`}
+            >
+              Pending: {pendingRequestCount} / {maxPendingRequests}
+            </span>
+          </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <label className="inline-flex items-center gap-1 px-2 py-1 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] rounded-[2px] text-[11px] font-medium cursor-pointer">
               <Upload className="w-3 h-3 text-[#137333]" /> Activity Upload

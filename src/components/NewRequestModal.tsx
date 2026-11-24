@@ -24,6 +24,9 @@ type RequestType = 'PR' | 'ISS' | 'STR';
 
 interface NewRequestModalProps {
   activeRole: UserRole;
+  requesterName?: string;
+  pendingRequestCount?: number;
+  maxPendingRequests?: number;
   businessUnit: string;
   pqtos: PqtoRecord[];
   stock: WarehouseStock[];
@@ -101,6 +104,9 @@ const ROLE_FORM_CONFIG: Record<
 
 export function NewRequestModal({
   activeRole,
+  requesterName,
+  pendingRequestCount = 0,
+  maxPendingRequests = 3,
   businessUnit,
   pqtos,
   stock,
@@ -113,7 +119,7 @@ export function NewRequestModal({
   const roleCfg = ROLE_FORM_CONFIG[activeRole];
 
   const [requestType, setRequestType] = useState<RequestType>(roleCfg.defaultType);
-  const [requester, setRequester] = useState(roleCfg.defaultRequester);
+  const [requester, setRequester] = useState(requesterName || roleCfg.defaultRequester);
   const [jobNo, setJobNo] = useState(businessUnit === 'PROJ-CIVIL1' ? 'JOB-CIV-2026-01' : 'JOB-2026-884');
   const [selectedPqtoNo, setSelectedPqtoNo] = useState(pqtos[0]?.pqtoNo || '');
   const [refDocNo, setRefDocNo] = useState(() => `REF-REQ-${Math.floor(Math.random() * 900 + 100)}`);
@@ -234,6 +240,12 @@ export function NewRequestModal({
     }
 
     if (requestType === 'PR') {
+      if (!asDraft && pendingRequestCount >= maxPendingRequests) {
+        setErrorMsg(
+          `Limit reached: You already have ${pendingRequestCount} Pending Approval requests (maximum ${maxPendingRequests} allowed). Wait for approval or save as Draft.`
+        );
+        return;
+      }
       if (!asDraft && config.refDocNo && !refDocNo.trim()) {
         setErrorMsg('Reference Document No. is required.');
         return;
@@ -427,13 +439,26 @@ export function NewRequestModal({
           </div>
 
           {/* Plain-English Form Guide */}
-          <div className="bg-[#f4f6f8] border border-[#d5dbe2] rounded-[2px] px-3 py-1.5 text-[11px] text-[#495057]">
-            {requestType === 'PR' &&
-              'Request new materials to be purchased for this project (checked against remaining PQTO budget).'}
-            {requestType === 'ISS' &&
-              'Withdraw materials currently in warehouse stock for site use (live stock availability is shown per row).'}
-            {requestType === 'STR' &&
-              'Move stock between site locations or return excess materials back to Central Warehouse.'}
+          <div className="bg-[#f4f6f8] border border-[#d5dbe2] rounded-[2px] px-3 py-1.5 text-[11px] text-[#495057] flex flex-wrap items-center justify-between gap-2">
+            <span>
+              {requestType === 'PR' &&
+                'Request new materials to be purchased for this project (checked against remaining PQTO budget).'}
+              {requestType === 'ISS' &&
+                'Withdraw materials currently in warehouse stock for site use (live stock availability is shown per row).'}
+              {requestType === 'STR' &&
+                'Move stock between site locations or return excess materials back to Central Warehouse.'}
+            </span>
+            {requestType === 'PR' && (
+              <span
+                className={`font-semibold px-2 py-0.5 rounded-[2px] border ${
+                  pendingRequestCount >= maxPendingRequests
+                    ? 'bg-[#fce8e6] text-[#c5221f] border-[#f5c2c0]'
+                    : 'bg-white text-[#005ec4] border-[#b6d4fe]'
+                }`}
+              >
+                Pending Requests: {pendingRequestCount} / {maxPendingRequests}
+              </span>
+            )}
           </div>
 
           {/* Form Header Fields */}
@@ -445,7 +470,10 @@ export function NewRequestModal({
               <input
                 value={requester}
                 onChange={(e) => setRequester(e.target.value)}
-                className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-white font-medium"
+                readOnly={activeRole === 'Applicant/Requestor'}
+                className={`w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 font-medium ${
+                  activeRole === 'Applicant/Requestor' ? 'bg-[#f1f3f5] text-[#495057] cursor-not-allowed' : 'bg-white'
+                }`}
               />
             </div>
 

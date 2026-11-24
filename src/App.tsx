@@ -160,6 +160,9 @@ export function App() {
   const [showNotifs, setShowNotifs] = useState(false);
 
   const activeRole: UserRole = currentUser?.role || 'Applicant/Requestor';
+  const currentFullName = currentUser?.fullName || 'Engr. John Doe';
+  const isRequestor = activeRole === 'Applicant/Requestor';
+  const MAX_PENDING_REQUESTS = 3;
 
   // Core ERP State (Persisted to Browser Cache DB)
   const [boqItems, setBoqItems] = useCachedState<BoqItem[]>('boqItems', INITIAL_BOQ_ITEMS);
@@ -249,6 +252,20 @@ export function App() {
 
   const visibleNavItems = visibleNavGroups.flatMap((g) => g.items);
   const activeNavItem = visibleNavItems.find((i) => i.key === activeModule) || ALL_NAV_ITEMS[0];
+
+  const normalizedUser = currentFullName.trim().toLowerCase();
+  const visiblePrs = isRequestor
+    ? prs.filter((p) => p.applicant.trim().toLowerCase() === normalizedUser)
+    : prs;
+  const visiblePos = isRequestor
+    ? pos.filter((p) => p.applicant.trim().toLowerCase() === normalizedUser)
+    : pos;
+  const visibleWithdrawals = isRequestor
+    ? withdrawals.filter((w) => w.requestedBy.trim().toLowerCase() === normalizedUser)
+    : withdrawals;
+  const pendingPrCount = prs.filter(
+    (p) => p.applicant.trim().toLowerCase() === normalizedUser && p.status === 'Pending Approval'
+  ).length;
 
   const handleFunctionJump = (e: React.FormEvent) => {
     e.preventDefault();
@@ -541,7 +558,7 @@ export function App() {
             title="View all submitted requests (PR, WD, PO) in one place"
           >
             <ClipboardList className="w-3.5 h-3.5 text-[#4da3ff]" />
-            <span>My Requests ({prs.length + withdrawals.length + pos.length})</span>
+            <span>My Requests ({visiblePrs.length + visibleWithdrawals.length + visiblePos.length})</span>
           </button>
 
           {/* Quick New Request Form Button */}
@@ -810,10 +827,13 @@ export function App() {
             {activeModule === 'pr' && (
               <PrModule
                 pqtos={pqtos}
-                prs={prs}
+                prs={visiblePrs}
                 setPrs={setPrs}
                 config={config}
                 activeRole={activeRole}
+                requesterName={currentFullName}
+                pendingRequestCount={pendingPrCount}
+                maxPendingRequests={MAX_PENDING_REQUESTS}
                 initialPqtoNo={selectedPqtoForPr}
                 onApprovePr={handleApprovePr}
                 onNavigateToPo={(prNo) => {
@@ -826,8 +846,8 @@ export function App() {
 
             {activeModule === 'po' && (
               <PoModule
-                prs={prs}
-                pos={pos}
+                prs={visiblePrs}
+                pos={visiblePos}
                 setPos={setPos}
                 config={config}
                 activeRole={activeRole}
@@ -856,7 +876,7 @@ export function App() {
             {activeModule === 'withdrawal' && (
               <WithdrawalModule
                 stock={stock}
-                withdrawals={withdrawals}
+                withdrawals={visibleWithdrawals}
                 config={config}
                 onPostWithdrawal={handlePostWithdrawal}
               />
@@ -885,10 +905,10 @@ export function App() {
               <TrackingModule
                 activeRole={activeRole}
                 pqtos={pqtos}
-                prs={prs}
-                pos={pos}
+                prs={visiblePrs}
+                pos={visiblePos}
                 receivings={receivings}
-                withdrawals={withdrawals}
+                withdrawals={visibleWithdrawals}
                 logs={logs}
                 onNavigate={(mod) => {
                   if (ROLE_MODULES[activeRole].includes(mod)) {
@@ -927,8 +947,11 @@ export function App() {
       </div>
       {showNewRequestModal && (
         <NewRequestModal
-          key={activeRole}
+          key={currentUser?.id || activeRole}
           activeRole={activeRole}
+          requesterName={currentFullName}
+          pendingRequestCount={pendingPrCount}
+          maxPendingRequests={MAX_PENDING_REQUESTS}
           businessUnit={businessUnit}
           pqtos={pqtos}
           stock={stock}
@@ -972,9 +995,9 @@ export function App() {
       {showMyRequestsModal && (
         <MyRequestsModal
           activeRole={activeRole}
-          prs={prs}
-          pos={pos}
-          withdrawals={withdrawals}
+          prs={visiblePrs}
+          pos={visiblePos}
+          withdrawals={visibleWithdrawals}
           onNavigate={(mod) => {
             if (ROLE_MODULES[activeRole].includes(mod)) {
               setActiveModule(mod);
