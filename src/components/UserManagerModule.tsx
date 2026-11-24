@@ -7,7 +7,6 @@ import {
   Plus,
   RotateCcw,
   Shield,
-  ShieldCheck,
   Trash2,
   UserPlus,
   Users,
@@ -270,7 +269,7 @@ export function UserManagerModule({
       id: `grp-${Date.now()}`,
       code,
       name: grpName.trim(),
-      description: grpDesc.trim() || 'Custom SunSystems security group',
+      description: grpDesc.trim() || 'Custom security group',
       allowedModules: [...grpMods],
       permissions: { ...grpPerms },
     };
@@ -363,10 +362,6 @@ export function UserManagerModule({
             );
           })}
         </div>
-        <span className="text-[11px] text-[#5c646d] flex items-center gap-1">
-          <ShieldCheck className="w-3.5 h-3.5 text-[#137333]" />
-          SunSystems-Style Group &amp; User Security Control
-        </span>
       </div>
 
       {/* ========================================================= */}
