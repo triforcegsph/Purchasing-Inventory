@@ -9,6 +9,7 @@ import {
 import type {
   FileAttachment,
   RequiredFieldConfig,
+  UserRole,
   WarehouseStock,
   WithdrawalRecord,
 } from '../types/erp';
@@ -18,6 +19,8 @@ interface WithdrawalModuleProps {
   stock: WarehouseStock[];
   withdrawals: WithdrawalRecord[];
   config: RequiredFieldConfig;
+  activeRole?: UserRole;
+  requesterName?: string;
   onPostWithdrawal: (wd: WithdrawalRecord) => void;
 }
 
@@ -25,13 +28,15 @@ export function WithdrawalModule({
   stock,
   withdrawals,
   config,
+  activeRole,
+  requesterName,
   onPostWithdrawal,
 }: WithdrawalModuleProps) {
   const [systemFilter, setSystemFilter] = useState('ALL');
   const [itemSearch, setItemSearch] = useState('');
   const [selectedStockId, setSelectedStockId] = useState(stock[0]?.id || '');
   const [requestQty, setRequestQty] = useState(2);
-  const [requestedBy, setRequestedBy] = useState('Foreman J. Doe');
+  const [requestedBy, setRequestedBy] = useState(requesterName || 'Foreman J. Doe');
   const [jobNo, setJobNo] = useState('JOB-2026-884');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -218,7 +223,10 @@ export function WithdrawalModule({
             <input
               value={requestedBy}
               onChange={(e) => setRequestedBy(e.target.value)}
-              className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-white"
+              readOnly={activeRole === 'Applicant/Requestor'}
+              className={`w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 ${
+                activeRole === 'Applicant/Requestor' ? 'bg-[#f1f3f5] text-[#495057] cursor-not-allowed' : 'bg-white'
+              }`}
             />
           </div>
           <div>

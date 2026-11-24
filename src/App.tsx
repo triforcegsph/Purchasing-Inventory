@@ -503,7 +503,20 @@ export function App() {
     addLog('Transfers', tr.transferNo, tr.type, `${tr.qty} ${tr.uom} of ${tr.itemCode}: ${tr.reason}`);
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const ownDocNos = new Set([
+    ...visiblePrs.map((p) => p.prNo),
+    ...visiblePos.map((p) => p.poNo),
+    ...visibleWithdrawals.map((w) => w.wdNo),
+  ]);
+  const visibleNotifications = isRequestor
+    ? notifications.filter(
+        (n) =>
+          n.recipientRole === 'Applicant' &&
+          (n.message.toLowerCase().includes(normalizedUser) ||
+            Array.from(ownDocNos).some((doc) => n.message.includes(doc)))
+      )
+    : notifications;
+  const unreadCount = visibleNotifications.filter((n) => !n.read).length;
 
   if (!currentUser) {
     return <LoginPage onLogin={handleLogin} />;
@@ -637,7 +650,12 @@ export function App() {
                   </button>
                 </div>
                 <div className="max-h-64 overflow-y-auto divide-y divide-slate-100">
-                  {notifications.map((n) => (
+                  {visibleNotifications.length === 0 ? (
+                    <div className="p-4 text-xs text-center text-slate-500">
+                      No notifications for your account.
+                    </div>
+                  ) : (
+                    visibleNotifications.map((n) => (
                     <div key={n.id} className="p-3 text-xs hover:bg-slate-50">
                       <div className="flex justify-between items-center mb-0.5">
                         <span className="font-bold text-slate-800">{n.title}</span>
@@ -648,7 +666,8 @@ export function App() {
                         To: {n.recipientRole}
                       </span>
                     </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -877,9 +896,12 @@ export function App() {
 
             {activeModule === 'withdrawal' && (
               <WithdrawalModule
+                key={currentUser?.id || activeRole}
                 stock={stock}
                 withdrawals={visibleWithdrawals}
                 config={config}
+                activeRole={activeRole}
+                requesterName={currentFullName}
                 onPostWithdrawal={handlePostWithdrawal}
               />
             )}
