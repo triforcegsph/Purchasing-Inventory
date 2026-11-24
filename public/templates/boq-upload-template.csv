@@ -2,3 +2,4 @@ Item Code,Description,BOQ UOM,BOQ Qty,PQTO UOM,PQTO Qty,Assigned Location,Cost C
 MAT-PIP-100-40,"B.I. Pipe Sch-40, Seamless - 100mm (6m/length)",m,120,PC/s,20,Zone A - Pump Room,CC-MEPF-01,120m = 20 PC/s @ 6m
 MAT-FIT-080-90,"B.I. Elbow Sch-40, Welded - 80mm x 90deg",lot,1,PC/s,12,Zone B - Riser Shaft,CC-MEPF-01,Itemized fittings
 MAT-VLV-100-16,"Gate Valve, Flanged PN16 - 100mm",PC/s,6,PC/s,6,Zone A - Pump Room,CC-MEPF-02,Chilled water isolation
+

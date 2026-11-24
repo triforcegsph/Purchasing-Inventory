@@ -71,3 +71,4 @@ export function pickCell(row: Record<string, string>, candidates: string[]): str
   }
   return '';
 }
+
