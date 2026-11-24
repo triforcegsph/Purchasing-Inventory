@@ -1,7 +1,9 @@
 # Update Logs — Purchasing & Inventory System
 
 ## 2026-11-24
-- **Summary Report Access (User, Purchasing & Warehousing)**:
+- **Simplified Requestor Interface**:
+  - Streamlined `Applicant/Requestor` navigation in [App.tsx](src/App.tsx) to 3 focused modules (`PR` Purchase Requisition, `WD` Withdrawal, `TRK` End-to-End Tracking), defaulting directly to `PR` and hiding the function-code jump bar for a cleaner workspace.
+- **Summary Report Access (User, Purchasing & Warehousing)** (`46d0514`):
   - Added **Summary Report** export/print modal to **Purchase Requisitions (`PR`)** ([PrModule.tsx](src/components/PrModule.tsx)), **My Requests** ([MyRequestsModal.tsx](src/components/MyRequestsModal.tsx)), and **Inventory Stock** ([TransfersAndSettingsModule.tsx](src/components/TransfersAndSettingsModule.tsx)) — complementing existing Summary Reports in `PO`, `RCV`, and `WD`.
 - **Requestor Account Isolation & Pending Limit** (`9aff36c`):
   - Restricted `Applicant/Requestor` accounts (`Engr. John Doe`, `Engr. Maria Santos`, `Engr. Carlos Reyes`) to view only their own requests across `My Requests`, `PR`, `PO`, `WD`, and `TRK`.
@@ -32,3 +34,4 @@
   - Added `applicant2@triforcegs.com.ph` (`Engr. Maria Santos`) and `applicant3@triforcegs.com.ph` (`Engr. Carlos Reyes`).
   - Removed `Triforce Global Solutions` / `TRIFORCEGS` display branding, keeping **Purchasing & Inventory System**.
   - Fixed PQTO remaining quantity validation and added inline `Validation` column in `NewRequestModal`.
+

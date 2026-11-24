@@ -111,7 +111,7 @@ const NAV_GROUPS: NavGroup[] = [
 const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 const ROLE_MODULES: Record<UserRole, ModuleKey[]> = {
-  'Applicant/Requestor': ['boq', 'pqto', 'pr', 'po', 'withdrawal', 'tracking', 'logs'],
+  'Applicant/Requestor': ['pr', 'withdrawal', 'tracking'],
   'REQ Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'PO Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'Warehouse Manager': ['receiving', 'withdrawal', 'transfers', 'po', 'tracking', 'logs'],
@@ -120,7 +120,7 @@ const ROLE_MODULES: Record<UserRole, ModuleKey[]> = {
 };
 
 const ROLE_DEFAULT_MODULE: Record<UserRole, ModuleKey> = {
-  'Applicant/Requestor': 'boq',
+  'Applicant/Requestor': 'pr',
   'REQ Approver': 'pr',
   'PO Approver': 'po',
   'Warehouse Manager': 'receiving',
@@ -535,18 +535,20 @@ export function App() {
             Purchasing &amp; Inventory System
           </span>
 
-          {/* SunSystems Function Code Quick-Launch */}
-          <form onSubmit={handleFunctionJump} className="hidden md:flex items-center ml-4">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <input
-                value={funcJump}
-                onChange={(e) => setFuncJump(e.target.value)}
-                placeholder="Function code (BOQ, PR, PO, RCV)..."
-                className="w-60 pl-8 pr-2.5 py-1 text-xs bg-[#181a1e] border border-[#3c414a] rounded-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#0072ed]"
-              />
-            </div>
-          </form>
+          {/* SunSystems Function Code Quick-Launch (hidden for Requestors to keep UI clean) */}
+          {!isRequestor && (
+            <form onSubmit={handleFunctionJump} className="hidden md:flex items-center ml-4">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  value={funcJump}
+                  onChange={(e) => setFuncJump(e.target.value)}
+                  placeholder="Function code (BOQ, PR, PO, RCV)..."
+                  className="w-60 pl-8 pr-2.5 py-1 text-xs bg-[#181a1e] border border-[#3c414a] rounded-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#0072ed]"
+                />
+              </div>
+            </form>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
