@@ -17,6 +17,8 @@ import type {
 } from '../types/erp';
 import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge, SummaryReportModal, getPoStageLabel } from './SharedUI';
 import { PoPrintModal } from './PoPrintModal';
+import { LiveTypeAhead } from './workflow/LiveTypeAhead';
+import { TxnLink } from './QuickTrackContext';
 
 interface PoModuleProps {
   prs: PrRecord[];
@@ -25,6 +27,7 @@ interface PoModuleProps {
   config: RequiredFieldConfig;
   activeRole: UserRole;
   initialPrNo?: string;
+  canNavigateToReceiving?: boolean;
   onRejectPo: (poId: string, comments: string) => void;
   onApprovePo: (poId: string) => void;
   onNavigateToReceiving: (poNo: string) => void;
@@ -38,6 +41,7 @@ export function PoModule({
   config,
   activeRole,
   initialPrNo,
+  canNavigateToReceiving = true,
   onRejectPo,
   onApprovePo,
   onNavigateToReceiving,
@@ -218,18 +222,35 @@ export function PoModule({
           </div>
           <div>
             <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">Vendor</label>
-            <input
+            <LiveTypeAhead
               value={vendor}
-              onChange={(e) => setVendor(e.target.value)}
-              className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-white"
+              onChange={setVendor}
+              placeholder="Type vendor name..."
+              options={Array.from(
+                new Set([
+                  'SteelCore Industrial Supply Corp.',
+                  'Metro Valve & Fittings Inc.',
+                  'Apex MEPF Hardware Trading',
+                  ...pos.map((p) => p.vendor).filter(Boolean),
+                ])
+              ).map((v) => ({ value: v, label: v, category: 'Approved Suppliers' }))}
             />
           </div>
           <div>
             <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">SP Name (Addtl Header)</label>
-            <input
+            <LiveTypeAhead
               value={spName}
-              onChange={(e) => setSpName(e.target.value)}
-              className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-white"
+              onChange={setSpName}
+              placeholder="Type SP / Cost Code..."
+              options={Array.from(
+                new Set([
+                  'SP-MECH-ALPHA',
+                  'SP-CIV-FOUNDATION',
+                  'SP-ELEC-RISER',
+                  ...prs.map((p) => p.spName).filter((s): s is string => Boolean(s)),
+                  ...pos.map((p) => p.spName).filter((s): s is string => Boolean(s)),
+                ])
+              ).map((s) => ({ value: s, label: s, category: 'Cost Codes / SP Names' }))}
             />
           </div>
         </div>
@@ -322,8 +343,12 @@ export function PoModule({
             <tbody className="divide-y divide-[#d5dbe2]">
               {searchablePos.map((po, idx) => (
                 <tr key={po.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
-                  <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{po.poNo}</td>
-                  <td className="px-2.5 py-1.5 font-mono text-[#005ec4] border-r border-[#e5e8ec]">{po.prNo}</td>
+                  <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">
+                    <TxnLink docNo={po.poNo} className="font-semibold" />
+                  </td>
+                  <td className="px-2.5 py-1.5 font-mono text-[#005ec4] border-r border-[#e5e8ec]">
+                    <TxnLink docNo={po.prNo} />
+                  </td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
                     <div>{po.refDocNo}</div>
                     <div className="text-[11px] text-[#5c646d] font-mono">{po.iaas2RefNo}</div>
@@ -394,12 +419,18 @@ export function PoModule({
                       )
                     )}
                     {(po.status === 'Approved' || po.status === 'Partially Received') && (
-                      <button
-                        onClick={() => onNavigateToReceiving(po.poNo)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#0072ed] hover:bg-[#005ec4] text-white rounded-[2px] text-[11px] font-semibold cursor-pointer"
-                      >
-                        Receive <ArrowRight className="w-3 h-3" />
-                      </button>
+                      canNavigateToReceiving ? (
+                        <button
+                          onClick={() => onNavigateToReceiving(po.poNo)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#0072ed] hover:bg-[#005ec4] text-white rounded-[2px] text-[11px] font-semibold cursor-pointer"
+                        >
+                          Receive <ArrowRight className="w-3 h-3" />
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-[#137333] font-medium">
+                          Ready for Receiving
+                        </span>
+                      )
                     )}
                   </td>
                 </tr>

@@ -1,14 +1,18 @@
 import type {
   BoqItem,
+  InvoiceRecord,
   NotificationItem,
   PoRecord,
   PqtoRecord,
   PrRecord,
   ReceivingRecord,
   RequiredFieldConfig,
+  RfqRecord,
   SmtpConfig,
+  StockAdjustmentRecord,
   StockTransferRecord,
   TransactionLog,
+  VendorRecord,
   WarehouseStock,
   WithdrawalRecord,
 } from '../types/erp';
@@ -663,6 +667,119 @@ export const CIVIL_PQTOS: PqtoRecord[] = [
         assignedLocation: 'Retaining Wall North',
       },
     ],
+  },
+];
+
+export const INITIAL_VENDORS: VendorRecord[] = [
+  {
+    id: 'vnd-1',
+    vendorCode: 'VND-001',
+    name: 'SteelCore Industrial Supply Corp.',
+    tin: '004-821-330-000',
+    category: 'Pipes, Valves & Fittings',
+    contactPerson: 'Ramon Villanueva',
+    email: 'sales@steelcore.com.ph',
+    phone: '+63 2 8551 4401',
+    paymentTerms: 'Net 30',
+    status: 'Active',
+  },
+  {
+    id: 'vnd-2',
+    vendorCode: 'VND-002',
+    name: 'MetroBuild MEPF Trading Inc.',
+    tin: '008-192-441-000',
+    category: 'MEPF & Electrical',
+    contactPerson: 'Carla Mendoza',
+    email: 'quotes@metrobuild.ph',
+    phone: '+63 2 8722 1980',
+    paymentTerms: 'Net 45',
+    status: 'Active',
+  },
+  {
+    id: 'vnd-3',
+    vendorCode: 'VND-003',
+    name: 'Pacific Rebar & Structural Co.',
+    tin: '002-774-910-000',
+    category: 'Structural & Civil',
+    contactPerson: 'Dennis Lim',
+    email: 'orders@pacificrebar.ph',
+    phone: '+63 2 8401 7722',
+    paymentTerms: 'Net 15',
+    status: 'Active',
+  },
+];
+
+export const INITIAL_RFQS: RfqRecord[] = [
+  {
+    id: 'rfq-1',
+    rfqNo: 'RFQ-2026-001',
+    prNo: 'PR-2026-0104',
+    title: 'B.I. Pipes & Fittings — Pump Room & Riser Shaft',
+    createdAt: '2026-11-18 09:30',
+    dueDate: '2026-11-22',
+    status: 'Awarded',
+    awardedVendorId: 'vnd-1',
+    quotes: [
+      {
+        id: 'q-1',
+        vendorId: 'vnd-1',
+        vendorName: 'SteelCore Industrial Supply Corp.',
+        unitPriceAvg: 1200,
+        totalQuotedAmount: 19200,
+        leadTimeDays: 3,
+        paymentTerms: 'Net 30',
+        notes: 'Includes site delivery to Tower B',
+      },
+      {
+        id: 'q-2',
+        vendorId: 'vnd-2',
+        vendorName: 'MetroBuild MEPF Trading Inc.',
+        unitPriceAvg: 1320,
+        totalQuotedAmount: 21120,
+        leadTimeDays: 5,
+        paymentTerms: 'Net 45',
+        notes: 'Ex-warehouse pickup',
+      },
+    ],
+  },
+];
+
+export const INITIAL_INVOICES: InvoiceRecord[] = [
+  {
+    id: 'inv-1',
+    invoiceNo: 'INV-2026-001',
+    vendorInvoiceRef: 'SI-88412',
+    poNo: 'PO-2026-0441',
+    grnNo: 'GRN-2026-0710',
+    vendorName: 'SteelCore Industrial Supply Corp.',
+    invoiceDate: '2026-11-20',
+    dueDate: '2026-12-20',
+    subtotal: 7200,
+    vatRate: 12,
+    vatAmount: 864,
+    withholdingTax: 144,
+    totalPayable: 7920,
+    invoicedQty: 6,
+    poQty: 16,
+    grnQty: 6,
+    matchStatus: '3-Way Matched',
+    paymentStatus: 'Approved for Payment',
+    remarks: 'Matched against partial delivery GRN-2026-0710 (6 PC/s)',
+  },
+];
+
+export const INITIAL_ADJUSTMENTS: StockAdjustmentRecord[] = [
+  {
+    id: 'adj-1',
+    adjNo: 'ADJ-2026-001',
+    itemCode: 'MAT-PIP-100-40',
+    description: 'B.I. Pipe Sch-40, Seamless - 100mm (6m/length)',
+    assignedLocation: 'Zone A - Pump Room',
+    qtyDelta: 0,
+    uom: 'PC/s',
+    reason: 'Physical Count',
+    performedBy: 'Warehouse Manager',
+    performedAt: '2026-11-21 08:00',
   },
 ];
 

@@ -39,8 +39,10 @@ export type ModuleKey =
   | 'boq'
   | 'pqto'
   | 'pr'
+  | 'rfq'
   | 'po'
   | 'receiving'
+  | 'invoices'
   | 'withdrawal'
   | 'transfers'
   | 'tracking'
@@ -61,7 +63,7 @@ export interface ProcessRouteRule {
 
 export interface ProcessPhaseConfig {
   id: string;
-  processKey: 'PR' | 'PO' | 'RCV';
+  processKey: 'BOQ' | 'PQTO' | 'PR' | 'PO' | 'RCV' | 'WD' | 'OTH';
   phaseName: string;
   stepsCount: number;
   actionLabel: string;
@@ -175,6 +177,8 @@ export interface PoRecord {
   createdAt: string;
   attachments: FileAttachment[];
   items: PoLineItem[];
+  vatRate?: number; // e.g., 12 for 12% VAT
+  paymentTerms?: string; // e.g., 'Net 30', 'COD'
 }
 
 export interface ReceivingLineItem {
@@ -212,6 +216,7 @@ export interface WarehouseStock {
   assignedLocation: string;
   availableStock: number;
   reservedStock: number;
+  reorderPoint?: number;
 }
 
 export interface WithdrawalRecord {
@@ -302,5 +307,76 @@ export interface MaterialCostProjection {
   financialCompletionPercentage: number;
   projectedCostAtCompletion: number;
   variance: number;
+}
+
+export interface VendorRecord {
+  id: string;
+  vendorCode: string;
+  name: string;
+  tin: string;
+  category: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  paymentTerms: 'COD' | 'Net 15' | 'Net 30' | 'Net 45' | 'Net 60';
+  status: 'Active' | 'On Hold' | 'Blacklisted';
+}
+
+export interface RfqQuote {
+  id: string;
+  vendorId: string;
+  vendorName: string;
+  unitPriceAvg: number;
+  totalQuotedAmount: number;
+  leadTimeDays: number;
+  paymentTerms: string;
+  notes?: string;
+}
+
+export interface RfqRecord {
+  id: string;
+  rfqNo: string;
+  prNo: string;
+  title: string;
+  createdAt: string;
+  dueDate: string;
+  status: 'Open' | 'Quotes Received' | 'Awarded';
+  awardedVendorId?: string;
+  quotes: RfqQuote[];
+}
+
+export interface InvoiceRecord {
+  id: string;
+  invoiceNo: string;
+  vendorInvoiceRef: string;
+  poNo: string;
+  grnNo?: string;
+  vendorName: string;
+  invoiceDate: string;
+  dueDate: string;
+  subtotal: number;
+  vatRate: number;
+  vatAmount: number;
+  withholdingTax: number;
+  totalPayable: number;
+  invoicedQty: number;
+  poQty: number;
+  grnQty: number;
+  matchStatus: '3-Way Matched' | 'Qty Variance' | 'Price Variance' | 'Pending GRN';
+  paymentStatus: 'Unpaid' | 'Approved for Payment' | 'Paid';
+  remarks?: string;
+}
+
+export interface StockAdjustmentRecord {
+  id: string;
+  adjNo: string;
+  itemCode: string;
+  description: string;
+  assignedLocation: string;
+  qtyDelta: number; // positive = gain, negative = loss/damage
+  uom: string;
+  reason: 'Physical Count' | 'Damaged' | 'Lost' | 'Expired' | 'Initial Balance';
+  performedBy: string;
+  performedAt: string;
 }
 

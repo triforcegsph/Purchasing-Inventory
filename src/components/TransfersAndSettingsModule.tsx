@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import {
+  AlertTriangle,
   Boxes,
   CheckCircle2,
+  Download,
   FileBarChart2,
   Mail,
   PackageCheck,
@@ -20,12 +22,15 @@ import type {
   ReceivingRecord,
   RequiredFieldConfig,
   SmtpConfig,
+  StockAdjustmentRecord,
   StockTransferRecord,
   UserRole,
   WarehouseStock,
   WithdrawalRecord,
 } from '../types/erp';
 import { StatusBadge, SummaryReportModal } from './SharedUI';
+import { ItemLink, TxnLink } from './QuickTrackContext';
+import { exportRowsToCsv } from '../utils/exportCsv';
 import { parseSpreadsheetFile, pickCell } from '../utils/excelUpload';
 
 interface TransfersAndSettingsProps {
@@ -38,6 +43,8 @@ interface TransfersAndSettingsProps {
   pos?: PoRecord[];
   withdrawals?: WithdrawalRecord[];
   receivings?: ReceivingRecord[];
+  adjustments?: StockAdjustmentRecord[];
+  onPostAdjustment?: (adj: StockAdjustmentRecord) => void;
   smtpConfig?: SmtpConfig;
   setSmtpConfig?: React.Dispatch<React.SetStateAction<SmtpConfig>>;
   onAddLog?: (module: string, docNo: string, action: string, comments: string) => void;
@@ -55,6 +62,8 @@ export function TransfersAndSettingsModule({
   pos = [],
   withdrawals = [],
   receivings = [],
+  adjustments = [],
+  onPostAdjustment,
   smtpConfig,
   setSmtpConfig,
   onAddLog,
@@ -127,6 +136,45 @@ export function TransfersAndSettingsModule({
   const [newItemTag, setNewItemTag] = useState('MECH');
   const [newItemLocation, setNewItemLocation] = useState('');
   const [newItemQty, setNewItemQty] = useState(0);
+
+  // Physical Count / Stock Adjustment state
+  const [adjStockId, setAdjStockId] = useState(stock[0]?.id || '');
+  const [adjDelta, setAdjDelta] = useState(0);
+  const [adjReason, setAdjReason] = useState<StockAdjustmentRecord['reason']>('Physical Count');
+  const [ledgerItemFilter, setLedgerItemFilter] = useState('ALL');
+
+  const handlePostStockAdjustment = () => {
+    const target = stock.find((s) => s.id === adjStockId) || stock[0];
+    if (!target || adjDelta === 0) return;
+    if (setStock) {
+      setStock((prev) =>
+        prev.map((s) =>
+          s.id === target.id
+            ? { ...s, availableStock: Math.max(0, s.availableStock + adjDelta) }
+            : s
+        )
+      );
+    }
+    const adjNo = `ADJ-2026-${String(adjustments.length + 1).padStart(3, '0')}`;
+    const rec: StockAdjustmentRecord = {
+      id: `adj-${Date.now()}`,
+      adjNo,
+      itemCode: target.itemCode,
+      description: target.description,
+      assignedLocation: target.assignedLocation,
+      qtyDelta: adjDelta,
+      uom: target.uom,
+      reason: adjReason,
+      performedBy: activeRole || 'Warehouse Manager',
+      performedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    };
+    if (onPostAdjustment) onPostAdjustment(rec);
+    if (onAddLog) {
+      onAddLog('INVENTORY', adjNo, `Stock Adjustment (${adjReason})`, `${target.itemCode} ${adjDelta > 0 ? '+' : ''}${adjDelta} ${target.uom}`);
+    }
+    setAdjDelta(0);
+    notify(`Posted ${adjNo}: ${target.itemCode} (${adjDelta > 0 ? '+' : ''}${adjDelta} ${target.uom}).`);
+  };
 
   const handleAddStockItem = () => {
     if (!newItemCode.trim() || !newItemDesc.trim()) return;
@@ -854,7 +902,9 @@ export function TransfersAndSettingsModule({
 
                 return (
                   <tr key={s.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
-                    <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{s.itemCode}</td>
+                    <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">
+                      <ItemLink code={s.itemCode} className="font-semibold" />
+                    </td>
                     <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{s.description}</td>
                     <td className="px-2.5 py-1.5 border-r border-[#e5e8ec] text-[#5c646d]">{s.systemTag}</td>
                     <td className="px-2.5 py-1.5 border-r border-[#e5e8ec] text-[#5c646d]">{s.assignedLocation}</td>
@@ -875,6 +925,191 @@ export function TransfersAndSettingsModule({
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Low-Stock Alert Strip + Export */}
+      {(() => {
+        const lowItems = stock.filter((s) => s.availableStock < (s.reorderPoint ?? 10));
+        return (
+          <div className="bg-white border border-[#cfd5dc] rounded-[2px] px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className={`w-4 h-4 ${lowItems.length > 0 ? 'text-[#b06000]' : 'text-[#137333]'}`} />
+              <span>
+                <strong>Reorder Alerts:</strong>{' '}
+                {lowItems.length === 0
+                  ? 'All stock items are above reorder thresholds.'
+                  : `${lowItems.length} item(s) below reorder threshold (${lowItems.map((l) => l.itemCode).join(', ')})`}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                exportRowsToCsv(
+                  'warehouse-stock.csv',
+                  ['Item Code', 'Description', 'System', 'Location', 'Available', 'Reserved', 'UOM'],
+                  stock.map((s) => [s.itemCode, s.description, s.systemTag, s.assignedLocation, s.availableStock, s.reservedStock, s.uom])
+                )
+              }
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] rounded-[2px] text-[11px] font-semibold cursor-pointer"
+            >
+              <Download className="w-3 h-3 text-[#137333]" /> Export Stock CSV
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* Physical Count / Stock Adjustments & Stock Ledger (Bin Card) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+        {canManageInventory && (
+          <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
+            <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+              Physical Count / Stock Adjustment
+            </div>
+            <div className="p-3 space-y-2.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">Stock Item</label>
+                  <select
+                    value={adjStockId}
+                    onChange={(e) => setAdjStockId(e.target.value)}
+                    className="w-full h-7 px-2 border border-[#b9c0c8] rounded-[2px] bg-white"
+                  >
+                    {stock.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.itemCode} — {s.assignedLocation} (Avail: {s.availableStock})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">Qty Delta (+/-)</label>
+                  <input
+                    type="number"
+                    value={adjDelta}
+                    onChange={(e) => setAdjDelta(Number(e.target.value))}
+                    className="w-full h-7 px-2 border border-[#b9c0c8] rounded-[2px] font-mono"
+                  />
+                </div>
+              </div>
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">Reason</label>
+                  <select
+                    value={adjReason}
+                    onChange={(e) => setAdjReason(e.target.value as StockAdjustmentRecord['reason'])}
+                    className="w-full h-7 px-2 border border-[#b9c0c8] rounded-[2px] bg-white"
+                  >
+                    <option value="Physical Count">Physical Count</option>
+                    <option value="Damaged">Damaged</option>
+                    <option value="Lost">Lost</option>
+                    <option value="Expired">Expired</option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePostStockAdjustment}
+                  className="h-7 px-3 bg-[#0072ed] hover:bg-[#005ec4] text-white rounded-[2px] font-semibold cursor-pointer"
+                >
+                  Post Adjustment
+                </button>
+              </div>
+              {adjustments.length > 0 && (
+                <div className="border-t border-[#e5e8ec] pt-2 space-y-1 max-h-28 overflow-y-auto">
+                  {adjustments.slice(0, 5).map((a) => (
+                    <div key={a.id} className="flex items-center justify-between text-[11px]">
+                      <span>
+                        <strong className="font-mono">{a.adjNo}</strong> • <ItemLink code={a.itemCode} /> ({a.reason})
+                      </span>
+                      <span className={`font-mono font-bold ${a.qtyDelta >= 0 ? 'text-[#137333]' : 'text-[#c5221f]'}`}>
+                        {a.qtyDelta >= 0 ? `+${a.qtyDelta}` : a.qtyDelta} {a.uom}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Stock Ledger (Bin Card) */}
+        <div className={`bg-white border border-[#cfd5dc] rounded-[2px] ${!canManageInventory ? 'lg:col-span-2' : ''}`}>
+          <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+              Stock Ledger / Bin Card Movements
+            </span>
+            <select
+              value={ledgerItemFilter}
+              onChange={(e) => setLedgerItemFilter(e.target.value)}
+              className="h-6 px-2 text-[11px] border border-[#b9c0c8] rounded-[2px] bg-white font-mono"
+            >
+              <option value="ALL">All Items</option>
+              {Array.from(new Set(stock.map((s) => s.itemCode))).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div className="max-h-52 overflow-y-auto">
+            <table className="w-full text-left border-collapse text-[11px]">
+              <thead>
+                <tr className="bg-[#eef2f6] border-b border-[#cfd5dc]">
+                  <th className="px-2 py-1 font-semibold">Doc No.</th>
+                  <th className="px-2 py-1 font-semibold">Type</th>
+                  <th className="px-2 py-1 font-semibold">Item</th>
+                  <th className="px-2 py-1 font-semibold text-right">Qty</th>
+                  <th className="px-2 py-1 font-semibold text-right">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e5e8ec]">
+                {[
+                  ...receivings.flatMap((r) =>
+                    r.items.map((it) => ({
+                      key: `rcv-${r.id}-${it.id}`,
+                      docNo: r.grnNo,
+                      type: 'GRN (+)',
+                      itemCode: it.itemCode,
+                      qty: `+${it.actualReceivedQty}`,
+                      positive: true,
+                      at: r.performedAt,
+                    }))
+                  ),
+                  ...withdrawals.flatMap((w) =>
+                    w.items.map((it, i) => ({
+                      key: `wd-${w.id}-${i}`,
+                      docNo: w.wdNo,
+                      type: 'WD (-)',
+                      itemCode: it.itemCode,
+                      qty: `-${it.requestedQty}`,
+                      positive: false,
+                      at: w.performedAt,
+                    }))
+                  ),
+                  ...adjustments.map((a) => ({
+                    key: `adj-${a.id}`,
+                    docNo: a.adjNo,
+                    type: `ADJ (${a.reason})`,
+                    itemCode: a.itemCode,
+                    qty: a.qtyDelta >= 0 ? `+${a.qtyDelta}` : String(a.qtyDelta),
+                    positive: a.qtyDelta >= 0,
+                    at: a.performedAt,
+                  })),
+                ]
+                  .filter((m) => ledgerItemFilter === 'ALL' || m.itemCode === ledgerItemFilter)
+                  .slice(0, 15)
+                  .map((m) => (
+                    <tr key={m.key}>
+                      <td className="px-2 py-1 font-mono"><TxnLink docNo={m.docNo} /></td>
+                      <td className="px-2 py-1">{m.type}</td>
+                      <td className="px-2 py-1 font-mono"><ItemLink code={m.itemCode} /></td>
+                      <td className={`px-2 py-1 text-right font-mono font-bold ${m.positive ? 'text-[#137333]' : 'text-[#c5221f]'}`}>
+                        {m.qty}
+                      </td>
+                      <td className="px-2 py-1 text-right font-mono text-[#5c646d]">{m.at}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
         </>
@@ -1173,6 +1408,191 @@ export function TransfersAndSettingsModule({
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Low-Stock Alert Strip + Export */}
+      {(() => {
+        const lowItems = stock.filter((s) => s.availableStock < (s.reorderPoint ?? 10));
+        return (
+          <div className="bg-white border border-[#cfd5dc] rounded-[2px] px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className={`w-4 h-4 ${lowItems.length > 0 ? 'text-[#b06000]' : 'text-[#137333]'}`} />
+              <span>
+                <strong>Reorder Alerts:</strong>{' '}
+                {lowItems.length === 0
+                  ? 'All stock items are above reorder thresholds.'
+                  : `${lowItems.length} item(s) below reorder threshold (${lowItems.map((l) => l.itemCode).join(', ')})`}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                exportRowsToCsv(
+                  'warehouse-stock.csv',
+                  ['Item Code', 'Description', 'System', 'Location', 'Available', 'Reserved', 'UOM'],
+                  stock.map((s) => [s.itemCode, s.description, s.systemTag, s.assignedLocation, s.availableStock, s.reservedStock, s.uom])
+                )
+              }
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] rounded-[2px] text-[11px] font-semibold cursor-pointer"
+            >
+              <Download className="w-3 h-3 text-[#137333]" /> Export Stock CSV
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* Physical Count / Stock Adjustments & Stock Ledger (Bin Card) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+        {canManageInventory && (
+          <div className="bg-white border border-[#cfd5dc] rounded-[2px]">
+            <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+              Physical Count / Stock Adjustment
+            </div>
+            <div className="p-3 space-y-2.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">Stock Item</label>
+                  <select
+                    value={adjStockId}
+                    onChange={(e) => setAdjStockId(e.target.value)}
+                    className="w-full h-7 px-2 border border-[#b9c0c8] rounded-[2px] bg-white"
+                  >
+                    {stock.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.itemCode} — {s.assignedLocation} (Avail: {s.availableStock})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">Qty Delta (+/-)</label>
+                  <input
+                    type="number"
+                    value={adjDelta}
+                    onChange={(e) => setAdjDelta(Number(e.target.value))}
+                    className="w-full h-7 px-2 border border-[#b9c0c8] rounded-[2px] font-mono"
+                  />
+                </div>
+              </div>
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">Reason</label>
+                  <select
+                    value={adjReason}
+                    onChange={(e) => setAdjReason(e.target.value as StockAdjustmentRecord['reason'])}
+                    className="w-full h-7 px-2 border border-[#b9c0c8] rounded-[2px] bg-white"
+                  >
+                    <option value="Physical Count">Physical Count</option>
+                    <option value="Damaged">Damaged</option>
+                    <option value="Lost">Lost</option>
+                    <option value="Expired">Expired</option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePostStockAdjustment}
+                  className="h-7 px-3 bg-[#0072ed] hover:bg-[#005ec4] text-white rounded-[2px] font-semibold cursor-pointer"
+                >
+                  Post Adjustment
+                </button>
+              </div>
+              {adjustments.length > 0 && (
+                <div className="border-t border-[#e5e8ec] pt-2 space-y-1 max-h-28 overflow-y-auto">
+                  {adjustments.slice(0, 5).map((a) => (
+                    <div key={a.id} className="flex items-center justify-between text-[11px]">
+                      <span>
+                        <strong className="font-mono">{a.adjNo}</strong> • <ItemLink code={a.itemCode} /> ({a.reason})
+                      </span>
+                      <span className={`font-mono font-bold ${a.qtyDelta >= 0 ? 'text-[#137333]' : 'text-[#c5221f]'}`}>
+                        {a.qtyDelta >= 0 ? `+${a.qtyDelta}` : a.qtyDelta} {a.uom}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Stock Ledger (Bin Card) */}
+        <div className={`bg-white border border-[#cfd5dc] rounded-[2px] ${!canManageInventory ? 'lg:col-span-2' : ''}`}>
+          <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+              Stock Ledger / Bin Card Movements
+            </span>
+            <select
+              value={ledgerItemFilter}
+              onChange={(e) => setLedgerItemFilter(e.target.value)}
+              className="h-6 px-2 text-[11px] border border-[#b9c0c8] rounded-[2px] bg-white font-mono"
+            >
+              <option value="ALL">All Items</option>
+              {Array.from(new Set(stock.map((s) => s.itemCode))).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div className="max-h-52 overflow-y-auto">
+            <table className="w-full text-left border-collapse text-[11px]">
+              <thead>
+                <tr className="bg-[#eef2f6] border-b border-[#cfd5dc]">
+                  <th className="px-2 py-1 font-semibold">Doc No.</th>
+                  <th className="px-2 py-1 font-semibold">Type</th>
+                  <th className="px-2 py-1 font-semibold">Item</th>
+                  <th className="px-2 py-1 font-semibold text-right">Qty</th>
+                  <th className="px-2 py-1 font-semibold text-right">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e5e8ec]">
+                {[
+                  ...receivings.flatMap((r) =>
+                    r.items.map((it) => ({
+                      key: `rcv-${r.id}-${it.id}`,
+                      docNo: r.grnNo,
+                      type: 'GRN (+)',
+                      itemCode: it.itemCode,
+                      qty: `+${it.actualReceivedQty}`,
+                      positive: true,
+                      at: r.performedAt,
+                    }))
+                  ),
+                  ...withdrawals.flatMap((w) =>
+                    w.items.map((it, i) => ({
+                      key: `wd-${w.id}-${i}`,
+                      docNo: w.wdNo,
+                      type: 'WD (-)',
+                      itemCode: it.itemCode,
+                      qty: `-${it.requestedQty}`,
+                      positive: false,
+                      at: w.performedAt,
+                    }))
+                  ),
+                  ...adjustments.map((a) => ({
+                    key: `adj-${a.id}`,
+                    docNo: a.adjNo,
+                    type: `ADJ (${a.reason})`,
+                    itemCode: a.itemCode,
+                    qty: a.qtyDelta >= 0 ? `+${a.qtyDelta}` : String(a.qtyDelta),
+                    positive: a.qtyDelta >= 0,
+                    at: a.performedAt,
+                  })),
+                ]
+                  .filter((m) => ledgerItemFilter === 'ALL' || m.itemCode === ledgerItemFilter)
+                  .slice(0, 15)
+                  .map((m) => (
+                    <tr key={m.key}>
+                      <td className="px-2 py-1 font-mono"><TxnLink docNo={m.docNo} /></td>
+                      <td className="px-2 py-1">{m.type}</td>
+                      <td className="px-2 py-1 font-mono"><ItemLink code={m.itemCode} /></td>
+                      <td className={`px-2 py-1 text-right font-mono font-bold ${m.positive ? 'text-[#137333]' : 'text-[#c5221f]'}`}>
+                        {m.qty}
+                      </td>
+                      <td className="px-2 py-1 text-right font-mono text-[#5c646d]">{m.at}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
         </>

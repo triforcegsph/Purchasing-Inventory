@@ -19,6 +19,7 @@ import type {
   WithdrawalRecord,
 } from '../types/erp';
 import { AttachmentUploader } from './SharedUI';
+import { LiveTypeAhead } from './workflow/LiveTypeAhead';
 
 type RequestType = 'PR' | 'ISS' | 'STR';
 
@@ -27,6 +28,8 @@ interface NewRequestModalProps {
   requesterName?: string;
   pendingRequestCount?: number;
   maxPendingRequests?: number;
+  nextRefDocNo?: string;
+  existingRefDocNos?: string[];
   businessUnit: string;
   pqtos: PqtoRecord[];
   stock: WarehouseStock[];
@@ -107,6 +110,8 @@ export function NewRequestModal({
   requesterName,
   pendingRequestCount = 0,
   maxPendingRequests = 3,
+  nextRefDocNo = 'REF-REQ-001',
+  existingRefDocNos = [],
   businessUnit,
   pqtos,
   stock,
@@ -119,39 +124,33 @@ export function NewRequestModal({
   const roleCfg = ROLE_FORM_CONFIG[activeRole];
 
   const [requestType, setRequestType] = useState<RequestType>(roleCfg.defaultType);
-  const [requester, setRequester] = useState(requesterName || roleCfg.defaultRequester);
-  const [jobNo, setJobNo] = useState(businessUnit === 'PROJ-CIVIL1' ? 'JOB-CIV-2026-01' : 'JOB-2026-884');
+  const requester = requesterName || roleCfg.defaultRequester;
+  const [jobNo, setJobNo] = useState('');
   const [selectedPqtoNo, setSelectedPqtoNo] = useState(pqtos[0]?.pqtoNo || '');
-  const [refDocNo, setRefDocNo] = useState(() => `REF-REQ-${Math.floor(Math.random() * 900 + 100)}`);
-  const [spName, setSpName] = useState('SP-MECH-ALPHA');
+  const refDocNo = nextRefDocNo;
+  const [spName, setSpName] = useState('');
   const [remarks, setRemarks] = useState('');
   const [autoApprove, setAutoApprove] = useState(activeRole === 'REQ Approver');
   const [transferType, setTransferType] = useState<'Stock Transfer' | 'Excess Return to Warehouse'>('Excess Return to Warehouse');
-  const [fromLocation, setFromLocation] = useState('Zone A - Pump Room');
+  const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('Central Warehouse');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const activePqto = pqtos.find((p) => p.pqtoNo === selectedPqtoNo) || pqtos[0];
 
-  const [rows, setRows] = useState<RequestDraftRow[]>(() => {
-    const firstItem = stock[0];
-    const code = firstItem?.itemCode || 'MAT-PIP-100-40';
-    const pqtoMatch = pqtos[0]?.items.find((i) => i.itemCode === code);
-    const rem = pqtoMatch ? Math.max(0, pqtoMatch.pqtoQty - pqtoMatch.prOrderedQty) : 0;
-    return [
-      {
-        id: 'req-row-1',
-        itemCode: code,
-        description: firstItem?.description || 'B.I. Pipe Sch-40, Seamless - 100mm (6m/length)',
-        uom: firstItem?.uom || 'PC/s',
-        qty: rem > 0 ? Math.min(2, rem) : 1,
-        assignedLocation: firstItem?.assignedLocation || 'Bldg B - B2 Pump Room',
-        pqtoQty: rem,
-        isNewItem: !pqtoMatch,
-      },
-    ];
-  });
+  const [rows, setRows] = useState<RequestDraftRow[]>([
+    {
+      id: 'req-row-1',
+      itemCode: '',
+      description: '',
+      uom: 'PC/s',
+      qty: 1,
+      assignedLocation: '',
+      pqtoQty: 0,
+      isNewItem: true,
+    },
+  ]);
 
   const getRowPqtoRemaining = (r: RequestDraftRow) => {
     const match = activePqto?.items.find((i) => i.itemCode === r.itemCode.trim());
@@ -248,6 +247,13 @@ export function NewRequestModal({
       }
       if (!asDraft && config.refDocNo && !refDocNo.trim()) {
         setErrorMsg('Reference Document No. is required.');
+        return;
+      }
+      const normalizedRef = refDocNo.trim().toLowerCase();
+      if (normalizedRef && existingRefDocNos.includes(normalizedRef)) {
+        setErrorMsg(
+          `Duplicate Reference Doc No. "${refDocNo.trim()}" already exists on another request. Use a unique reference number (click Auto for ${nextRefDocNo}).`
+        );
         return;
       }
 
@@ -469,11 +475,8 @@ export function NewRequestModal({
               </label>
               <input
                 value={requester}
-                onChange={(e) => setRequester(e.target.value)}
-                readOnly={activeRole === 'Applicant/Requestor'}
-                className={`w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 font-medium ${
-                  activeRole === 'Applicant/Requestor' ? 'bg-[#f1f3f5] text-[#495057] cursor-not-allowed' : 'bg-white'
-                }`}
+                readOnly
+                className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 font-medium bg-[#f1f3f5] text-[#495057] cursor-not-allowed"
               />
             </div>
 
@@ -481,10 +484,18 @@ export function NewRequestModal({
               <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">
                 Job / Project No. <span className="text-[#d5002b]">*</span>
               </label>
-              <input
+              <LiveTypeAhead
                 value={jobNo}
-                onChange={(e) => setJobNo(e.target.value)}
-                className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-white font-mono"
+                onChange={setJobNo}
+                placeholder="Type Job / Project No..."
+                inputClassName="font-mono"
+                options={Array.from(
+                  new Set([
+                    'JOB-2026-884',
+                    'JOB-CIV-2026-01',
+                    ...pqtos.map((p) => p.jobNo).filter(Boolean),
+                  ])
+                ).map((j) => ({ value: j, label: j, category: 'Project Jobs' }))}
               />
             </div>
 
@@ -492,10 +503,15 @@ export function NewRequestModal({
               <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">
                 SP Name / Cost Code
               </label>
-              <input
+              <LiveTypeAhead
                 value={spName}
-                onChange={(e) => setSpName(e.target.value)}
-                className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-white"
+                onChange={setSpName}
+                placeholder="Type SP / Cost Code..."
+                options={[
+                  { value: 'SP-MECH-ALPHA', label: 'SP-MECH-ALPHA', category: 'Cost Codes' },
+                  { value: 'SP-CIV-FOUNDATION', label: 'SP-CIV-FOUNDATION', category: 'Cost Codes' },
+                  { value: 'SP-ELEC-RISER', label: 'SP-ELEC-RISER', category: 'Cost Codes' },
+                ]}
               />
             </div>
 
@@ -524,8 +540,8 @@ export function NewRequestModal({
                   </label>
                   <input
                     value={refDocNo}
-                    onChange={(e) => setRefDocNo(e.target.value)}
-                    className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-white font-mono"
+                    readOnly
+                    className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-[#f1f3f5] text-[#495057] font-mono cursor-not-allowed"
                   />
                 </div>
               </>
@@ -643,7 +659,7 @@ export function NewRequestModal({
                     <tr key={r.id} className={rowHasError ? 'bg-[#fce8e6]' : 'bg-white'}>
                       <td className="p-1 border-r border-[#e5e8ec]">
                         <select
-                          value=""
+                          value={stock.some((s) => s.itemCode === r.itemCode) ? r.itemCode : ''}
                           onChange={(e) => handlePickFromCatalog(r.id, e.target.value)}
                           className="w-full h-6 text-[11px] border border-[#cfd5dc] rounded-[2px] px-1 bg-[#fafbfd]"
                         >

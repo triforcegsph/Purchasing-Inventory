@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowRight, Link2, Search } from 'lucide-react';
 import type { PqtoRecord } from '../types/erp';
 import { StatusBadge } from './SharedUI';
+import { ItemLink } from './QuickTrackContext';
 
 interface PqtoModuleProps {
   pqtos: PqtoRecord[];
@@ -112,7 +113,9 @@ export function PqtoModule({ pqtos, setPqtos, onNavigateToPr }: PqtoModuleProps)
               const remaining = Math.max(0, it.pqtoQty - it.prOrderedQty);
               return (
                 <tr key={it.boqItemId} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
-                  <td className="px-2.5 py-1.5 font-mono border-r border-[#e5e8ec]">{it.itemCode}</td>
+                  <td className="px-2.5 py-1.5 font-mono border-r border-[#e5e8ec]">
+                    <ItemLink code={it.itemCode} className="font-semibold" />
+                  </td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{it.description}</td>
                   <td className="px-2.5 py-1.5 text-[#495057] border-r border-[#e5e8ec]">{it.assignedLocation}</td>
                   <td className="px-2.5 py-1.5 text-[#5c646d] border-r border-[#e5e8ec]">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
@@ -24,6 +24,7 @@ import {
   AttachmentViewerModal,
   StatusBadge,
 } from './SharedUI';
+import { TxnLink } from './QuickTrackContext';
 
 interface TrackingModuleProps {
   activeRole: UserRole;
@@ -33,6 +34,8 @@ interface TrackingModuleProps {
   receivings: ReceivingRecord[];
   withdrawals: WithdrawalRecord[];
   logs: TransactionLog[];
+  initialQuery?: string;
+  allowedModules?: ModuleKey[];
   onNavigate: (module: ModuleKey) => void;
 }
 
@@ -53,14 +56,23 @@ export function TrackingModule({
   receivings,
   withdrawals,
   logs,
+  initialQuery = '',
+  allowedModules,
   onNavigate,
 }: TrackingModuleProps) {
   const [stageFilter, setStageFilter] = useState<'ALL' | 'PR' | 'PO' | 'DELIVERY' | 'DONE'>('ALL');
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [viewingAttachments, setViewingAttachments] = useState<{
     docNo: string;
     attachments: FileAttachment[];
   } | null>(null);
+
+  useEffect(() => {
+    if (initialQuery) {
+      setQuery(initialQuery);
+      setStageFilter('ALL');
+    }
+  }, [initialQuery]);
 
   const q = query.trim().toLowerCase();
 
@@ -336,20 +348,30 @@ export function TrackingModule({
               {/* Card Header */}
               <div className="px-3 py-2 bg-[#f4f6f8] border-b border-[#cfd5dc] flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono font-bold text-[#1f2328]">{chain.pr.prNo}</span>
+                  <TxnLink docNo={chain.pr.prNo} className="font-bold" />
                   {chain.linkedPos.length > 0 && (
                     <>
                       <ArrowRight className="w-3 h-3 text-[#6b7280]" />
-                      <span className="font-mono font-bold text-[#005ec4]">
-                        {chain.linkedPos.map((p) => p.poNo).join(', ')}
+                      <span className="inline-flex flex-wrap items-center gap-1">
+                        {chain.linkedPos.map((p, i) => (
+                          <span key={p.id} className="inline-flex items-center gap-1">
+                            {i > 0 && <span className="text-[#6b7280]">,</span>}
+                            <TxnLink docNo={p.poNo} className="font-bold" />
+                          </span>
+                        ))}
                       </span>
                     </>
                   )}
                   {chain.linkedReceivings.length > 0 && (
                     <>
                       <ArrowRight className="w-3 h-3 text-[#6b7280]" />
-                      <span className="font-mono font-bold text-[#137333]">
-                        {chain.linkedReceivings.map((r) => r.grnNo).join(', ')}
+                      <span className="inline-flex flex-wrap items-center gap-1">
+                        {chain.linkedReceivings.map((r, i) => (
+                          <span key={r.id} className="inline-flex items-center gap-1">
+                            {i > 0 && <span className="text-[#6b7280]">,</span>}
+                            <TxnLink docNo={r.grnNo} className="font-bold text-[#137333]" />
+                          </span>
+                        ))}
                       </span>
                     </>
                   )}
@@ -371,7 +393,7 @@ export function TrackingModule({
                       })
                     }
                   />
-                  {chain.category === 'PR' && (
+                  {chain.category === 'PR' && (!allowedModules || allowedModules.includes('pr')) && (
                     <button
                       type="button"
                       onClick={() => onNavigate('pr')}
@@ -380,7 +402,7 @@ export function TrackingModule({
                       Open PR
                     </button>
                   )}
-                  {chain.category === 'PO' && (
+                  {chain.category === 'PO' && (!allowedModules || allowedModules.includes('po')) && (
                     <button
                       type="button"
                       onClick={() => onNavigate('po')}
@@ -389,7 +411,7 @@ export function TrackingModule({
                       Open PO
                     </button>
                   )}
-                  {chain.category === 'DELIVERY' && (
+                  {chain.category === 'DELIVERY' && (!allowedModules || allowedModules.includes('receiving')) && (
                     <button
                       type="button"
                       onClick={() => onNavigate('receiving')}

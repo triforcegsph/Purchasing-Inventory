@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Download, Search } from 'lucide-react';
 import type { TransactionLog, UserRole } from '../types/erp';
+import { TxnLink } from './QuickTrackContext';
+import { exportRowsToCsv } from '../utils/exportCsv';
 
 const ROLE_VISIBLE_MODULES: Record<UserRole, string[]> = {
   'Applicant/Requestor': ['BOQ', 'PQTO', 'PR', 'PO', 'WITHDRAWAL', 'SYSTEM', 'SMTP'],
-  'REQ Approver':        ['BOQ', 'PQTO', 'PR', 'PO', 'SYSTEM', 'SMTP'],
-  'PO Approver':         ['BOQ', 'PQTO', 'PR', 'PO', 'SYSTEM', 'SMTP'],
+  'REQ Approver':        ['BOQ', 'PQTO', 'PR', 'PO', 'RFQ', 'SYSTEM', 'SMTP'],
+  'PO Approver':         ['BOQ', 'PQTO', 'PR', 'PO', 'RFQ', 'INVOICE', 'SYSTEM', 'SMTP'],
   'Warehouse Manager':   ['RECEIVING', 'WITHDRAWAL', 'TRANSFERS', 'PO', 'INVENTORY', 'SYSTEM', 'SMTP'],
-  'Purchaser':           ['BOQ', 'PQTO', 'PR', 'PO', 'INVENTORY', 'SYSTEM', 'SMTP'],
-  'Admin':               ['BOQ', 'PQTO', 'PR', 'PO', 'RECEIVING', 'WITHDRAWAL', 'TRANSFERS', 'INVENTORY', 'SYSTEM', 'SMTP'],
+  'Purchaser':           ['BOQ', 'PQTO', 'PR', 'PO', 'RFQ', 'VENDOR', 'INVOICE', 'INVENTORY', 'SYSTEM', 'SMTP'],
+  'Admin':               ['BOQ', 'PQTO', 'PR', 'PO', 'RFQ', 'VENDOR', 'INVOICE', 'RECEIVING', 'WITHDRAWAL', 'TRANSFERS', 'INVENTORY', 'SYSTEM', 'SMTP'],
 };
 
 export function LogsModule({ logs, activeRole }: { logs: TransactionLog[]; activeRole: UserRole }) {
@@ -38,14 +40,29 @@ export function LogsModule({ logs, activeRole }: { logs: TransactionLog[]; activ
           </span>
         </div>
 
-        <div className="relative w-full sm:w-64">
-          <Search className="w-3 h-3 text-[#6b7280] absolute left-2 top-1/2 -translate-y-1/2" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter SP Name, Doc No, User..."
-            className="w-full h-7 pl-7 pr-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white"
-          />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-3 h-3 text-[#6b7280] absolute left-2 top-1/2 -translate-y-1/2" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter SP Name, Doc No, User..."
+              className="w-full h-7 pl-7 pr-2 text-xs border border-[#b9c0c8] rounded-[2px] bg-white"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              exportRowsToCsv(
+                'transaction-audit-logs.csv',
+                ['Timestamp', 'User', 'SP Name', 'Module', 'Doc No', 'Action', 'Comments'],
+                filtered.map((l) => [l.timestamp, l.adminOrUser, l.spName, l.module, l.docNo, l.action, l.comments])
+              )
+            }
+            className="inline-flex items-center gap-1 h-7 px-2.5 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] rounded-[2px] text-xs font-semibold text-[#1f2328] cursor-pointer shrink-0"
+          >
+            <Download className="w-3.5 h-3.5 text-[#137333]" /> Export CSV
+          </button>
         </div>
       </div>
 
@@ -69,7 +86,9 @@ export function LogsModule({ logs, activeRole }: { logs: TransactionLog[]; activ
                 <td className="px-2.5 py-1.5 font-medium border-r border-[#e5e8ec]">{log.adminOrUser}</td>
                 <td className="px-2.5 py-1.5 font-mono text-[#005ec4] border-r border-[#e5e8ec]">{log.spName || '—'}</td>
                 <td className="px-2.5 py-1.5 font-semibold border-r border-[#e5e8ec]">{log.module}</td>
-                <td className="px-2.5 py-1.5 font-mono text-[#005ec4] border-r border-[#e5e8ec]">{log.docNo}</td>
+                <td className="px-2.5 py-1.5 font-mono text-[#005ec4] border-r border-[#e5e8ec]">
+                  <TxnLink docNo={log.docNo} />
+                </td>
                 <td className="px-2.5 py-1.5 font-medium border-r border-[#e5e8ec]">{log.action}</td>
                 <td className="px-2.5 py-1.5 text-[#495057]">{log.comments}</td>
               </tr>

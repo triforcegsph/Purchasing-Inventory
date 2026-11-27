@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+import * as XLSX from 'xlsx';
 import { Download, Eye, FileText, Image as ImageIcon, Paperclip, Printer, Trash2, Upload, X } from 'lucide-react';
 import type { FileAttachment } from '../types/erp';
 
@@ -107,6 +108,8 @@ export function AttachmentUploader({
         ? ext
         : ext === 'JPEG'
         ? 'JPG'
+        : ext === 'XLS' || ext === 'CSV'
+        ? 'XLSX'
         : 'OTHER';
 
     const baseAttachment: FileAttachment = {
@@ -157,7 +160,7 @@ export function AttachmentUploader({
           <input
             ref={inputRef}
             type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.xlsx,.csv"
+            accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv"
             onChange={handleFileChange}
             className="hidden"
           />
@@ -312,6 +315,82 @@ export function SummaryReportModal({ title, headers, rows, onClose }: SummaryRep
   );
 }
 
+function SpreadsheetPreview({ dataUrl }: { dataUrl: string }) {
+  const [sheetIdx, setSheetIdx] = useState(0);
+
+  const sheets = useMemo(() => {
+    try {
+      const base64 = dataUrl.split(',')[1] || '';
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) {
+        bytes[i] = bin.charCodeAt(i);
+      }
+      const wb = XLSX.read(bytes, { type: 'array' });
+      return wb.SheetNames.map((name) => ({
+        name,
+        rows: XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1, defval: '' }).slice(0, 100),
+      }));
+    } catch {
+      return [];
+    }
+  }, [dataUrl]);
+
+  if (sheets.length === 0) {
+    return (
+      <div className="bg-white border border-[#cfd5dc] p-6 text-center rounded-[2px] text-xs text-[#495057] w-full">
+        Unable to preview this spreadsheet. Click <strong>Download</strong> above to open it.
+      </div>
+    );
+  }
+
+  const activeSheet = sheets[sheetIdx] || sheets[0];
+
+  return (
+    <div className="w-full bg-white border border-[#cfd5dc] rounded-[2px] overflow-hidden">
+      {sheets.length > 1 && (
+        <div className="px-3 py-1.5 bg-[#f4f6f8] border-b border-[#cfd5dc] flex flex-wrap gap-1.5">
+          {sheets.map((s, idx) => (
+            <button
+              key={s.name}
+              type="button"
+              onClick={() => setSheetIdx(idx)}
+              className={`px-2 py-0.5 text-[11px] font-semibold rounded-[2px] border cursor-pointer ${
+                idx === sheetIdx
+                  ? 'bg-[#1976d2] text-white border-[#1976d2]'
+                  : 'bg-white text-[#1f2328] border-[#b9c0c8]'
+              }`}
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="max-h-[50vh] overflow-auto">
+        <table className="w-full text-left border-collapse text-[11px]">
+          <tbody>
+            {activeSheet.rows.map((row, rIdx) => (
+              <tr key={rIdx} className={rIdx === 0 ? 'bg-[#eef2f6] font-bold' : rIdx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
+                <td className="px-2 py-1 border-b border-r border-[#d5dbe2] text-[#6b7280] font-mono w-8 text-center">
+                  {rIdx + 1}
+                </td>
+                {(row as unknown[]).map((cell, cIdx) => (
+                  <td key={cIdx} className="px-2 py-1 border-b border-r border-[#e5e8ec] whitespace-nowrap max-w-[220px] truncate">
+                    {String(cell ?? '')}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-3 py-1 bg-[#f8fafc] border-t border-[#e2e8f0] text-[10.5px] text-[#64748b]">
+        Showing up to first {activeSheet.rows.length} rows of {activeSheet.name}
+      </div>
+    </div>
+  );
+}
+
 interface AttachmentViewerModalProps {
   docNo: string;
   attachments: FileAttachment[];
@@ -391,6 +470,8 @@ export function AttachmentViewerModal({ docNo, attachments, onClose }: Attachmen
                   title={active.name}
                   className="w-full h-[55vh] border border-[#cfd5dc] bg-white"
                 />
+              ) : active.type === 'XLSX' || /\.(xlsx|xls|csv)$/i.test(active.name) ? (
+                <SpreadsheetPreview dataUrl={active.dataUrl} />
               ) : (
                 <div className="bg-white border border-[#cfd5dc] p-6 text-center rounded-[2px] text-xs text-[#495057]">
                   Preview not available for {active.type} files. Click <strong>Download</strong> above to open it.

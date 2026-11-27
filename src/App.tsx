@@ -14,6 +14,7 @@ import {
   Menu,
   PackageCheck,
   PackageMinus,
+  Plus,
   RotateCcw,
   Route,
   Search,
@@ -24,6 +25,7 @@ import {
 } from 'lucide-react';
 import type {
   BoqItem,
+  InvoiceRecord,
   ModuleKey,
   NotificationItem,
   PoRecord,
@@ -32,19 +34,24 @@ import type {
   PrRecord,
   ReceivingRecord,
   RequiredFieldConfig,
+  RfqRecord,
   SmtpConfig,
+  StockAdjustmentRecord,
   StockTransferRecord,
   TransactionLog,
   UserAccount,
   UserGroup,
   UserRole,
+  VendorRecord,
   WarehouseStock,
   WithdrawalRecord,
 } from './types/erp';
 import {
   CIVIL_BOQ_ITEMS,
   CIVIL_PQTOS,
+  INITIAL_ADJUSTMENTS,
   INITIAL_BOQ_ITEMS,
+  INITIAL_INVOICES,
   INITIAL_LOGS,
   INITIAL_NOTIFICATIONS,
   INITIAL_POS,
@@ -52,9 +59,11 @@ import {
   INITIAL_PRS,
   INITIAL_RECEIVINGS,
   INITIAL_REQUIRED_CONFIG,
+  INITIAL_RFQS,
   INITIAL_SMTP_CONFIG,
   INITIAL_STOCK,
   INITIAL_TRANSFERS,
+  INITIAL_VENDORS,
   INITIAL_WITHDRAWALS,
 } from './data/seedData';
 import { BoqModule } from './components/BoqModule';
@@ -71,6 +80,9 @@ import { LoginPage, SYSTEM_ACCOUNTS } from './components/LoginPage';
 import { TrackingModule } from './components/TrackingModule';
 import { DEFAULT_USER_GROUPS, UserManagerModule } from './components/UserManagerModule';
 import { DEFAULT_PROCESS_PHASES, ProcessDesignerModule } from './components/ProcessDesignerModule';
+import { QuickTrackProvider } from './components/QuickTrackContext';
+import { VendorsRfqModule } from './components/VendorsRfqModule';
+import { InvoicesModule } from './components/InvoicesModule';
 
 interface NavGroup {
   group: string;
@@ -94,7 +106,9 @@ const NAV_GROUPS: NavGroup[] = [
     group: 'Purchasing Management',
     items: [
       { key: 'pr', code: 'PR', label: 'Purchase Requisition', icon: ClipboardList },
+      // { key: 'rfq', code: 'RFQ', label: 'Vendors & RFQ', icon: Search },
       { key: 'po', code: 'PO', label: 'Purchase Order', icon: ShoppingCart },
+      { key: 'invoices', code: 'AP', label: 'AP Invoices (3-Way)', icon: FilePlus2 },
     ],
   },
   {
@@ -120,11 +134,11 @@ const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 const ROLE_MODULES: Record<UserRole, ModuleKey[]> = {
   'Applicant/Requestor': ['pr', 'withdrawal', 'tracking'],
-  'REQ Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
-  'PO Approver': ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
+  'REQ Approver': ['boq', 'pqto', 'pr', 'rfq', 'po', 'tracking', 'logs'],
+  'PO Approver': ['boq', 'pqto', 'pr', 'rfq', 'po', 'invoices', 'tracking', 'logs'],
   'Warehouse Manager': ['receiving', 'withdrawal', 'transfers', 'po', 'tracking', 'logs'],
-  'Purchaser': ['boq', 'pqto', 'pr', 'po', 'transfers', 'tracking', 'logs'],
-  'Admin': ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'tracking', 'logs', 'users'],
+  'Purchaser': ['boq', 'pqto', 'pr', 'rfq', 'po', 'invoices', 'transfers', 'tracking', 'logs'],
+  'Admin': ['boq', 'pqto', 'pr', 'rfq', 'po', 'receiving', 'invoices', 'withdrawal', 'transfers', 'tracking', 'logs', 'users'],
 };
 
 const ROLE_DEFAULT_MODULE: Record<UserRole, ModuleKey> = {
@@ -135,6 +149,17 @@ const ROLE_DEFAULT_MODULE: Record<UserRole, ModuleKey> = {
   'Purchaser': 'po',
   'Admin': 'transfers',
 };
+
+interface ProjectDefinition {
+  code: string;
+  name: string;
+  jobNo: string;
+}
+
+const DEFAULT_PROJECTS: ProjectDefinition[] = [
+  { code: 'PROJ-TWRB', name: 'Tower B', jobNo: 'JOB-2026-884' },
+  { code: 'PROJ-CIVIL1', name: 'Site Infra', jobNo: 'JOB-CIV-2026-01' },
+];
 
 function useCachedState<T>(key: string, defaultValue: T): [T, React.Dispatch<React.SetStateAction<T>>] {
   const storageKey = `erp_cache_${key}`;
@@ -174,6 +199,7 @@ export function App() {
   const [funcJump, setFuncJump] = useState('');
   const [businessUnit, setBusinessUnit] = useCachedState<string>('businessUnit', 'PROJ-TWRB');
   const [showNotifs, setShowNotifs] = useState(false);
+  const [trackingQuery, setTrackingQuery] = useState('');
 
   const liveUser = currentUser ? accounts.find((a) => a.id === currentUser.id) || currentUser : null;
   const activeRole: UserRole = liveUser?.role || 'Applicant/Requestor';
@@ -195,6 +221,14 @@ export function App() {
   const [notifications, setNotifications] = useCachedState<NotificationItem[]>('notifications', INITIAL_NOTIFICATIONS);
   const [config, setConfig] = useCachedState<RequiredFieldConfig>('config', INITIAL_REQUIRED_CONFIG);
   const [smtpConfig, setSmtpConfig] = useCachedState<SmtpConfig>('smtpConfig', INITIAL_SMTP_CONFIG);
+  const [vendors, setVendors] = useCachedState<VendorRecord[]>('vendors', INITIAL_VENDORS);
+  const [rfqs, setRfqs] = useCachedState<RfqRecord[]>('rfqs', INITIAL_RFQS);
+  const [invoices, setInvoices] = useCachedState<InvoiceRecord[]>('invoices', INITIAL_INVOICES);
+  const [adjustments, setAdjustments] = useCachedState<StockAdjustmentRecord[]>('adjustments', INITIAL_ADJUSTMENTS);
+  const [projects, setProjects] = useCachedState<ProjectDefinition[]>('projects', DEFAULT_PROJECTS);
+  const [projectWorkspaces, setProjectWorkspaces] = useCachedState<
+    Record<string, { boqItems: BoqItem[]; pqtos: PqtoRecord[]; boqStatus: 'Draft' | 'Posted' }>
+  >('projectWorkspaces', {});
 
   const handleResetDemoDb = () => {
     try {
@@ -222,6 +256,12 @@ export function App() {
     setNotifications(INITIAL_NOTIFICATIONS);
     setConfig(INITIAL_REQUIRED_CONFIG);
     setSmtpConfig(INITIAL_SMTP_CONFIG);
+    setVendors(INITIAL_VENDORS);
+    setRfqs(INITIAL_RFQS);
+    setInvoices(INITIAL_INVOICES);
+    setAdjustments(INITIAL_ADJUSTMENTS);
+    setProjects(DEFAULT_PROJECTS);
+    setProjectWorkspaces({});
   };
 
   // Navigation context
@@ -230,19 +270,101 @@ export function App() {
   const [selectedPoForReceiving, setSelectedPoForReceiving] = useState<string | undefined>(undefined);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const [showMyRequestsModal, setShowMyRequestsModal] = useState(false);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [newProjCode, setNewProjCode] = useState('');
+  const [newProjName, setNewProjName] = useState('');
+  const [newProjJobNo, setNewProjJobNo] = useState('');
+  const [newProjTemplate, setNewProjTemplate] = useState<'blank' | 'sample'>('blank');
+  const [newProjError, setNewProjError] = useState<string | null>(null);
 
   const handleProjectChange = (newProj: string) => {
+    setProjectWorkspaces((prev) => ({
+      ...prev,
+      [businessUnit]: { boqItems, pqtos, boqStatus },
+    }));
     setBusinessUnit(newProj);
-    if (newProj === 'PROJ-CIVIL1') {
+    const saved = projectWorkspaces[newProj];
+    if (saved) {
+      setBoqItems(saved.boqItems);
+      setPqtos(saved.pqtos);
+      setBoqStatus(saved.boqStatus);
+    } else if (newProj === 'PROJ-CIVIL1') {
       setBoqItems(CIVIL_BOQ_ITEMS);
       setPqtos(CIVIL_PQTOS);
       setBoqStatus('Posted');
-    } else {
+    } else if (newProj === 'PROJ-TWRB') {
       setBoqItems(INITIAL_BOQ_ITEMS);
       setPqtos(INITIAL_PQTOS);
       setBoqStatus('Draft');
+    } else {
+      setBoqItems([]);
+      setPqtos([]);
+      setBoqStatus('Draft');
     }
     addLog('System', newProj, 'Switched Project', `Active workspace switched to ${newProj}`);
+  };
+
+  const handleCreateProject = () => {
+    setNewProjError(null);
+    const code = newProjCode.trim().toUpperCase().replace(/\s+/g, '-');
+    const name = newProjName.trim();
+    const jobNo = newProjJobNo.trim().toUpperCase();
+    if (!code || !name || !jobNo) {
+      setNewProjError('Project Code, Project Name, and Job / Project No. are required.');
+      return;
+    }
+    if (projects.some((p) => p.code.toUpperCase() === code)) {
+      setNewProjError(`Project code "${code}" already exists.`);
+      return;
+    }
+
+    const initialBoq: BoqItem[] =
+      newProjTemplate === 'sample'
+        ? INITIAL_BOQ_ITEMS.map((it, idx) => ({ ...it, id: `${code}-boq-${idx + 1}` }))
+        : [];
+    const initialPqto: PqtoRecord[] = [
+      {
+        id: `pqto-${Date.now()}`,
+        pqtoNo: `PQTO-${code}-001`,
+        projectTitle: name,
+        jobNo,
+        createdAt: new Date().toISOString().slice(0, 10),
+        status: 'Draft',
+        items: initialBoq
+          .filter((i) => !i.isBlankRow && !i.isWorksRelated && !i.isLegacyFittingsRow)
+          .map((i) => ({
+            boqItemId: i.id,
+            itemCode: i.itemCode,
+            description: i.description,
+            boqUom: i.boqUom,
+            boqQty: i.boqQty,
+            pqtoUom: i.pqtoUom,
+            pqtoQty: i.pqtoQty,
+            prOrderedQty: 0,
+            assignedLocation: i.assignedLocation || 'Site-Wide',
+          })),
+      },
+    ];
+
+    setProjectWorkspaces((prev) => ({
+      ...prev,
+      [businessUnit]: { boqItems, pqtos, boqStatus },
+      [code]: { boqItems: initialBoq, pqtos: initialPqto, boqStatus: 'Draft' },
+    }));
+    setProjects((prev) => [...prev, { code, name, jobNo }]);
+    setBusinessUnit(code);
+    setBoqItems(initialBoq);
+    setPqtos(initialPqto);
+    setBoqStatus('Draft');
+    addLog('System', code, 'Created Project', `Created project ${code} (${name}) — Job ${jobNo}`);
+    setShowNewProjectModal(false);
+    setNewProjCode('');
+    setNewProjName('');
+    setNewProjJobNo('');
+    setNewProjTemplate('blank');
+    if (allowedModules.includes('boq')) {
+      setActiveModule('boq');
+    }
   };
 
   const handleLogin = (account: UserAccount) => {
@@ -407,7 +529,9 @@ export function App() {
       );
     }
 
-    setActiveModule('pqto');
+    if (allowedModules.includes('pqto')) {
+      setActiveModule('pqto');
+    }
   };
 
   const handleApprovePr = (prId: string) => {
@@ -563,6 +687,26 @@ export function App() {
   }
 
   return (
+    <QuickTrackProvider
+      boqItems={boqItems}
+      pqtos={pqtos}
+      prs={visiblePrs}
+      pos={visiblePos}
+      receivings={receivings}
+      withdrawals={visibleWithdrawals}
+      transfers={transfers}
+      stock={stock}
+      logs={logs}
+      allowedModules={allowedModules}
+      onNavigate={(mod, query) => {
+        if (query !== undefined) {
+          setTrackingQuery(query);
+        }
+        if (allowedModules.includes(mod)) {
+          setActiveModule(mod);
+        }
+      }}
+    >
     <div className="min-h-screen flex flex-col bg-[#f5f7fb] text-[#1e293b]">
       {/* Clean Light Top Masthead */}
       <header className="bg-white text-[#1e293b] h-13 flex items-center justify-between px-4 border-b border-[#dce2ec] sticky top-0 z-40 shadow-xs">
@@ -631,16 +775,39 @@ export function App() {
           </button>
 
           {/* Project / Business Unit Selector */}
-          <div className="hidden sm:flex items-center gap-1.5 bg-[#f8fafc] px-2.5 py-1.5 border border-[#cbd5e1] rounded-md text-xs">
+          <div className="hidden sm:flex items-center gap-1.5 bg-[#f8fafc] px-2.5 py-1 border border-[#cbd5e1] rounded-md text-xs">
             <span className="text-[#64748b]">Project:</span>
             <select
               value={businessUnit}
               onChange={(e) => handleProjectChange(e.target.value)}
               className="bg-transparent text-[#1e293b] font-semibold focus:outline-none cursor-pointer"
             >
-              <option value="PROJ-TWRB">PROJ-TWRB (Tower B)</option>
-              <option value="PROJ-CIVIL1">PROJ-CIVIL1 (Site Infra)</option>
+              {projects
+                .filter(
+                  (p) =>
+                    !liveUser.businessUnitAccess ||
+                    liveUser.businessUnitAccess === 'ALL' ||
+                    liveUser.businessUnitAccess === p.code
+                )
+                .map((p) => (
+                  <option key={p.code} value={p.code}>
+                    {p.code} ({p.name})
+                  </option>
+                ))}
             </select>
+            {activeRole === 'Admin' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setNewProjError(null);
+                  setShowNewProjectModal(true);
+                }}
+                title="Create a new project (Admin only)"
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#eff6ff] hover:bg-[#dbeafe] text-[#1976d2] border border-[#bfdbfe] rounded text-[11px] font-semibold cursor-pointer"
+              >
+                <Plus className="w-3 h-3" /> New
+              </button>
+            )}
           </div>
 
           {/* Logged-In User & Sign Out */}
@@ -892,6 +1059,7 @@ export function App() {
                 pqtos={pqtos}
                 setPqtos={setPqtos}
                 onNavigateToPr={(pqtoNo) => {
+                  if (!allowedModules.includes('pr')) return;
                   setSelectedPqtoForPr(pqtoNo);
                   setActiveModule('pr');
                 }}
@@ -909,8 +1077,27 @@ export function App() {
                 pendingRequestCount={pendingPrCount}
                 maxPendingRequests={MAX_PENDING_REQUESTS}
                 initialPqtoNo={selectedPqtoForPr}
+                allRefDocNos={prs.map((p) => p.refDocNo.trim().toLowerCase()).filter(Boolean)}
+                canNavigateToPo={allowedModules.includes('po')}
                 onApprovePr={handleApprovePr}
                 onNavigateToPo={(prNo) => {
+                  if (!allowedModules.includes('po')) return;
+                  setSelectedPrForPo(prNo);
+                  setActiveModule('po');
+                }}
+                onAddLog={addLog}
+              />
+            )}
+
+            {activeModule === 'rfq' && (
+              <VendorsRfqModule
+                vendors={vendors}
+                setVendors={setVendors}
+                rfqs={rfqs}
+                setRfqs={setRfqs}
+                prs={visiblePrs}
+                onAwardToPo={(prNo) => {
+                  if (!allowedModules.includes('po')) return;
                   setSelectedPrForPo(prNo);
                   setActiveModule('po');
                 }}
@@ -926,9 +1113,11 @@ export function App() {
                 config={config}
                 activeRole={activeRole}
                 initialPrNo={selectedPrForPo}
+                canNavigateToReceiving={allowedModules.includes('receiving')}
                 onRejectPo={handleRejectPo}
                 onApprovePo={handleApprovePo}
                 onNavigateToReceiving={(poNo) => {
+                  if (!allowedModules.includes('receiving')) return;
                   setSelectedPoForReceiving(poNo);
                   setActiveModule('receiving');
                 }}
@@ -944,6 +1133,17 @@ export function App() {
                 config={config}
                 initialPoNo={selectedPoForReceiving}
                 onPostReceiving={handlePostReceiving}
+              />
+            )}
+
+            {activeModule === 'invoices' && (
+              <InvoicesModule
+                invoices={invoices}
+                setInvoices={setInvoices}
+                pos={visiblePos}
+                receivings={receivings}
+                activeRole={activeRole}
+                onAddLog={addLog}
               />
             )}
 
@@ -970,6 +1170,8 @@ export function App() {
                 pos={pos}
                 withdrawals={withdrawals}
                 receivings={receivings}
+                adjustments={adjustments}
+                onPostAdjustment={(adj) => setAdjustments((prev) => [adj, ...prev])}
                 smtpConfig={smtpConfig}
                 setSmtpConfig={setSmtpConfig}
                 onAddLog={addLog}
@@ -987,8 +1189,10 @@ export function App() {
                 receivings={receivings}
                 withdrawals={visibleWithdrawals}
                 logs={logs}
+                initialQuery={trackingQuery}
+                allowedModules={allowedModules}
                 onNavigate={(mod) => {
-                  if (ROLE_MODULES[activeRole].includes(mod)) {
+                  if (allowedModules.includes(mod)) {
                     setActiveModule(mod);
                   }
                 }}
@@ -1001,10 +1205,14 @@ export function App() {
                 setPhases={setProcessPhases}
                 accounts={accounts}
                 groups={groups}
+                boqItems={boqItems}
+                pqtos={pqtos}
                 prs={visiblePrs}
                 pos={visiblePos}
                 receivings={receivings}
                 withdrawals={visibleWithdrawals}
+                stock={stock}
+                transfers={transfers}
                 onOpenNewRequest={() => setShowNewRequestModal(true)}
                 onNavigate={(mod) => {
                   if (allowedModules.includes(mod)) {
@@ -1061,6 +1269,14 @@ export function App() {
           requesterName={currentFullName}
           pendingRequestCount={pendingPrCount}
           maxPendingRequests={MAX_PENDING_REQUESTS}
+          nextRefDocNo={(() => {
+            const maxNum = prs.reduce((max, p) => {
+              const m = /^REF-REQ-(\d+)$/i.exec(p.refDocNo.trim());
+              return m ? Math.max(max, Number(m[1])) : max;
+            }, 0);
+            return `REF-REQ-${String(maxNum + 1).padStart(3, '0')}`;
+          })()}
+          existingRefDocNos={prs.map((p) => p.refDocNo.trim().toLowerCase()).filter(Boolean)}
           businessUnit={businessUnit}
           pqtos={pqtos}
           stock={stock}
@@ -1108,7 +1324,7 @@ export function App() {
           pos={visiblePos}
           withdrawals={visibleWithdrawals}
           onNavigate={(mod) => {
-            if (ROLE_MODULES[activeRole].includes(mod)) {
+            if (allowedModules.includes(mod)) {
               setActiveModule(mod);
             }
           }}
@@ -1116,7 +1332,102 @@ export function App() {
           onClose={() => setShowMyRequestsModal(false)}
         />
       )}
+
+      {showNewProjectModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/45 flex items-center justify-center p-4"
+          onClick={() => setShowNewProjectModal(false)}
+        >
+          <div
+            className="bg-white border border-[#cfd5dc] rounded-[4px] shadow-xl w-full max-w-md overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 py-2.5 bg-[#f4f6f8] border-b border-[#cfd5dc] flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wide text-[#1f2328]">
+                Create New Project (Admin)
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowNewProjectModal(false)}
+                className="p-1 text-[#5c646d] hover:text-[#1f2328] cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3 text-xs">
+              {newProjError && (
+                <div className="px-2.5 py-1.5 bg-[#fce8e6] border border-[#f5c2c0] text-[#c5221f] rounded-[2px] font-medium">
+                  {newProjError}
+                </div>
+              )}
+              <div>
+                <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">
+                  Project Code <span className="text-[#d5002b]">*</span>
+                </label>
+                <input
+                  value={newProjCode}
+                  onChange={(e) => setNewProjCode(e.target.value)}
+                  placeholder="e.g. PROJ-BLDG3"
+                  className="w-full h-8 px-2.5 border border-[#b9c0c8] rounded-[2px] font-mono uppercase"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">
+                  Project Name <span className="text-[#d5002b]">*</span>
+                </label>
+                <input
+                  value={newProjName}
+                  onChange={(e) => setNewProjName(e.target.value)}
+                  placeholder="e.g. Tower C - MEPF"
+                  className="w-full h-8 px-2.5 border border-[#b9c0c8] rounded-[2px]"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">
+                  Default Job / Project No. <span className="text-[#d5002b]">*</span>
+                </label>
+                <input
+                  value={newProjJobNo}
+                  onChange={(e) => setNewProjJobNo(e.target.value)}
+                  placeholder="e.g. JOB-2026-901"
+                  className="w-full h-8 px-2.5 border border-[#b9c0c8] rounded-[2px] font-mono uppercase"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">
+                  Initial BOQ Setup
+                </label>
+                <select
+                  value={newProjTemplate}
+                  onChange={(e) => setNewProjTemplate(e.target.value as 'blank' | 'sample')}
+                  className="w-full h-8 px-2 border border-[#b9c0c8] rounded-[2px] bg-white"
+                >
+                  <option value="blank">Blank BOQ (Start from Scratch / Upload Excel)</option>
+                  <option value="sample">Copy Sample BOQ Items</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#e5e8ec]">
+                <button
+                  type="button"
+                  onClick={() => setShowNewProjectModal(false)}
+                  className="px-3 py-1.5 bg-white hover:bg-[#eef0f3] border border-[#b9c0c8] rounded-[2px] font-semibold text-[#1f2328] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateProject}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0072ed] hover:bg-[#005ec4] text-white rounded-[2px] font-semibold cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Create Project
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    </QuickTrackProvider>
   );
 }
 

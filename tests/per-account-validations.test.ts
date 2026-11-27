@@ -54,7 +54,7 @@ function suite(title: string, fn: () => void) {
   fn();
 }
 
-function assert(condition: boolean, message: string) {
+function assert(condition: boolean, message = 'Assertion failed') {
   if (!condition) throw new Error(message);
 }
 function assertEqual<T>(actual: T, expected: T, label = '') {
@@ -69,6 +69,8 @@ const ROLE_MODULES: Record<UserRole, string[]> = {
   'REQ Approver':        ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'PO Approver':         ['boq', 'pqto', 'pr', 'po', 'tracking', 'logs'],
   'Warehouse Manager':   ['receiving', 'withdrawal', 'transfers', 'po', 'tracking', 'logs'],
+  Purchaser:             ['boq', 'pqto', 'pr', 'po', 'transfers', 'tracking', 'logs'],
+  Admin:                 ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'tracking', 'workflow', 'logs', 'users'],
 };
 
 const ROLE_DEFAULT_MODULE: Record<UserRole, string> = {
@@ -76,6 +78,8 @@ const ROLE_DEFAULT_MODULE: Record<UserRole, string> = {
   'REQ Approver':        'pr',
   'PO Approver':         'po',
   'Warehouse Manager':   'receiving',
+  Purchaser:             'po',
+  Admin:                 'boq',
 };
 
 function canAccess(role: UserRole, module: string): boolean {

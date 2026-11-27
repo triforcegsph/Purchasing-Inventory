@@ -16,6 +16,7 @@ import type {
 } from '../types/erp';
 import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge, SummaryReportModal } from './SharedUI';
 import { PoPrintModal } from './PoPrintModal';
+import { TxnLink } from './QuickTrackContext';
 
 interface ReceivingModuleProps {
   pos: PoRecord[];
@@ -383,8 +384,12 @@ export function ReceivingModule({
             <tbody className="divide-y divide-[#d5dbe2]">
               {filteredReceivings.map((r, idx) => (
                 <tr key={r.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
-                  <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{r.grnNo}</td>
-                  <td className="px-2.5 py-1.5 font-mono text-[#005ec4] border-r border-[#e5e8ec]">{r.poNo}</td>
+                  <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">
+                    <TxnLink docNo={r.grnNo} className="font-semibold" />
+                  </td>
+                  <td className="px-2.5 py-1.5 font-mono text-[#005ec4] border-r border-[#e5e8ec]">
+                    <TxnLink docNo={r.poNo} />
+                  </td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
                     <div>{r.refDocNo}</div>
                     <div className="text-[11px] text-[#5c646d] font-mono">{r.iaas2RefNo}</div>

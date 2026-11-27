@@ -20,6 +20,8 @@ import type {
   UserRole,
 } from '../types/erp';
 import { AttachmentCellButton, AttachmentUploader, AttachmentViewerModal, StatusBadge, SummaryReportModal } from './SharedUI';
+import { LiveTypeAhead } from './workflow/LiveTypeAhead';
+import { TxnLink } from './QuickTrackContext';
 
 interface PrModuleProps {
   pqtos: PqtoRecord[];
@@ -31,6 +33,8 @@ interface PrModuleProps {
   pendingRequestCount?: number;
   maxPendingRequests?: number;
   initialPqtoNo?: string;
+  allRefDocNos?: string[];
+  canNavigateToPo?: boolean;
   onApprovePr: (prId: string) => void;
   onNavigateToPo: (prNo: string) => void;
   onAddLog: (module: string, docNo: string, action: string, comments: string) => void;
@@ -46,6 +50,8 @@ export function PrModule({
   pendingRequestCount = 0,
   maxPendingRequests = 3,
   initialPqtoNo,
+  allRefDocNos,
+  canNavigateToPo = true,
   onApprovePr,
   onNavigateToPo,
   onAddLog,
@@ -152,6 +158,16 @@ export function PrModule({
         setErrorMsg('Reference Document Number is required.');
         return;
       }
+    }
+    const normalizedRef = refDocNo.trim().toLowerCase();
+    const knownRefs = allRefDocNos ?? prs.map((p) => p.refDocNo.trim().toLowerCase());
+    if (normalizedRef && knownRefs.includes(normalizedRef)) {
+      setErrorMsg(
+        `Duplicate Reference Document No. "${refDocNo.trim()}" already exists on another PR. Please enter a unique Reference Document No.`
+      );
+      return;
+    }
+    if (!asDraft) {
       if (config.attachments && attachments.length === 0) {
         setErrorMsg('At least 1 attachment (PDF, JPG, etc.) is required.');
         return;
@@ -293,20 +309,36 @@ export function PrModule({
             <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">
               Job / Project No. <span className="text-[#d5002b]">*</span>
             </label>
-            <input
+            <LiveTypeAhead
               value={jobNo}
-              onChange={(e) => setJobNo(e.target.value)}
-              className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-white"
+              onChange={setJobNo}
+              placeholder="Type Job / Project No..."
+              options={Array.from(
+                new Set([
+                  'JOB-2026-884',
+                  'JOB-CIV-2026-01',
+                  ...pqtos.map((p) => p.jobNo).filter(Boolean),
+                  ...prs.map((p) => p.jobNo).filter(Boolean),
+                ])
+              ).map((j) => ({ value: j, label: j, category: 'Active Jobs / Projects' }))}
             />
           </div>
           <div>
             <label className="block text-[11px] font-semibold text-[#495057] mb-0.5">
               SP Name (Addtl Header)
             </label>
-            <input
+            <LiveTypeAhead
               value={spName}
-              onChange={(e) => setSpName(e.target.value)}
-              className="w-full h-7 text-xs border border-[#b9c0c8] rounded-[2px] px-2 bg-white"
+              onChange={setSpName}
+              placeholder="Type SP / Cost Code..."
+              options={Array.from(
+                new Set([
+                  'SP-MECH-ALPHA',
+                  'SP-CIV-FOUNDATION',
+                  'SP-ELEC-RISER',
+                  ...prs.map((p) => p.spName).filter((s): s is string => Boolean(s)),
+                ])
+              ).map((s) => ({ value: s, label: s, category: 'Cost Codes / SP Names' }))}
             />
           </div>
         </div>
@@ -468,8 +500,12 @@ export function PrModule({
             <tbody className="divide-y divide-[#d5dbe2]">
               {prs.map((pr, idx) => (
                 <tr key={pr.id} className={idx % 2 === 1 ? 'bg-[#fafbfd]' : 'bg-white'}>
-                  <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">{pr.prNo}</td>
-                  <td className="px-2.5 py-1.5 text-[#005ec4] font-mono border-r border-[#e5e8ec]">{pr.pqtoNo}</td>
+                  <td className="px-2.5 py-1.5 font-mono font-semibold border-r border-[#e5e8ec]">
+                    <TxnLink docNo={pr.prNo} className="font-semibold" />
+                  </td>
+                  <td className="px-2.5 py-1.5 text-[#005ec4] font-mono border-r border-[#e5e8ec]">
+                    <TxnLink docNo={pr.pqtoNo} />
+                  </td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.refDocNo}</td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">{pr.items.length}</td>
                   <td className="px-2.5 py-1.5 border-r border-[#e5e8ec]">
@@ -497,12 +533,18 @@ export function PrModule({
                       )
                     )}
                     {pr.status === 'Approved' && (
-                      <button
-                        onClick={() => onNavigateToPo(pr.prNo)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#0072ed] hover:bg-[#005ec4] text-white rounded-[2px] text-[11px] font-semibold cursor-pointer"
-                      >
-                        To PO <ArrowRight className="w-3 h-3" />
-                      </button>
+                      canNavigateToPo ? (
+                        <button
+                          onClick={() => onNavigateToPo(pr.prNo)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#0072ed] hover:bg-[#005ec4] text-white rounded-[2px] text-[11px] font-semibold cursor-pointer"
+                        >
+                          To PO <ArrowRight className="w-3 h-3" />
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-[#137333] font-medium">
+                          Approved — Ready for PO
+                        </span>
+                      )
                     )}
                   </td>
                 </tr>
