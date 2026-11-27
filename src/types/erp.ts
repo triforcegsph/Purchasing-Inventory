@@ -45,7 +45,29 @@ export type ModuleKey =
   | 'transfers'
   | 'tracking'
   | 'logs'
-  | 'users';
+  | 'users'
+  | 'workflow';
+
+export interface ProcessRouteRule {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  conditions: string;
+  destination: string;
+  ignoreManualRecipient: boolean;
+  recipients: string[];
+  defaultRecipient: string;
+}
+
+export interface ProcessPhaseConfig {
+  id: string;
+  processKey: 'PR' | 'PO' | 'RCV';
+  phaseName: string;
+  stepsCount: number;
+  actionLabel: string;
+  gatewayTitle: string;
+  routes: ProcessRouteRule[];
+}
 
 export interface FileAttachment {
   id: string;

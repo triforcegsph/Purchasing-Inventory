@@ -31,6 +31,7 @@ const MODULE_OPTIONS: { key: ModuleKey; code: string; label: string }[] = [
   { key: 'withdrawal', code: 'WD', label: 'Withdrawal' },
   { key: 'transfers', code: 'OTH', label: 'Transfers & Inventory' },
   { key: 'tracking', code: 'TRK', label: 'End-to-End Tracking' },
+  { key: 'workflow', code: 'WFL', label: 'Process Designer' },
   { key: 'logs', code: 'LOG', label: 'Transaction Logs' },
   { key: 'users', code: 'USR', label: 'User Manager' },
 ];

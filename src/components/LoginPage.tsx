@@ -74,6 +74,15 @@ export const SYSTEM_ACCOUNTS: UserAccount[] = [
     role: 'Admin',
     department: 'System Administration & Control',
   },
+  {
+    id: 'usr-admin-2',
+    username: 'admin2@triforcegs.com.ph',
+    password: '1234',
+    fullName: 'Admin 2',
+    role: 'Admin',
+    department: 'Workflow & Process Administration',
+    allowedModules: ['boq', 'pqto', 'pr', 'po', 'receiving', 'withdrawal', 'transfers', 'tracking', 'workflow', 'logs', 'users'],
+  },
 ];
 
 interface LoginPageProps {
@@ -108,23 +117,25 @@ export function LoginPage({ accounts = SYSTEM_ACCOUNTS, onLogin }: LoginPageProp
   };
 
   return (
-    <div className="min-h-screen bg-[#eef0f3] flex flex-col justify-between text-[#1f2328]">
-      {/* Top Corporate Masthead */}
-      <header className="bg-[#23262b] text-white h-12 px-4 flex items-center justify-between border-b border-[#16181c]">
+    <div className="min-h-screen bg-[#f5f7fb] flex flex-col justify-between text-[#1e293b]">
+      {/* Clean White Top Navbar + Indigo Accent */}
+      <header className="bg-white text-[#1e293b] h-13 px-5 flex items-center justify-between border-b-2 border-[#2c3e96] shadow-xs">
         <div className="flex items-center gap-2.5">
-          <Building2 className="w-4 h-4 text-[#4da3ff]" />
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-100">
+          <div className="w-7 h-7 rounded-md bg-[#2c3e96] text-white flex items-center justify-center">
+            <Building2 className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#1e293b]">
             Purchasing &amp; Inventory System
           </span>
         </div>
-        <span className="text-[11px] font-mono text-slate-400">
+        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#eff6ff] text-[#2c3e96] border border-[#bfdbfe]">
           Enterprise Access Portal
         </span>
       </header>
 
       {/* Main Centered Login Card */}
       <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white border border-[#cfd5dc] rounded-[2px] shadow-md p-6 space-y-5">
+        <div className="w-full max-w-md bg-white border border-[#dce2ec] rounded-xl shadow-lg p-6 space-y-5">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-wider text-[#005ec4] mb-1">
               Purchasing &amp; Inventory System

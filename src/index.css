@@ -2,19 +2,34 @@
 
 @layer base {
   :root {
-    --infor-masthead: #23262b;
-    --infor-sidebar: #2b2f36;
+    --infor-masthead: #ffffff;
+    --infor-sidebar: #ffffff;
     --infor-red: #d5002b;
-    --infor-blue: #0072ed;
-    --infor-blue-hover: #005ec4;
-    --infor-canvas: #eef0f3;
-    --infor-border: #cfd5dc;
+    --infor-blue: #1976d2;
+    --infor-blue-hover: #1565c0;
+    --infor-canvas: #f5f7fb;
+    --infor-border: #dce2ec;
   }
 
   body {
-    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     background-color: var(--infor-canvas);
-    color: #1f2328;
+    color: #1e293b;
+  }
+}
+
+/* Clean modern card/table/input polish across all modules */
+@media screen {
+  main .rounded-\[2px\] {
+    border-radius: 0.5rem;
+  }
+  main input,
+  main select,
+  main textarea {
+    border-radius: 0.375rem;
+  }
+  main button {
+    border-radius: 0.375rem;
   }
 }
 

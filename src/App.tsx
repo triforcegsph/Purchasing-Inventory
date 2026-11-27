@@ -8,6 +8,7 @@ import {
   Database,
   FilePlus2,
   FileSpreadsheet,
+  GitFork,
   History,
   LogOut,
   Menu,
@@ -27,6 +28,7 @@ import type {
   NotificationItem,
   PoRecord,
   PqtoRecord,
+  ProcessPhaseConfig,
   PrRecord,
   ReceivingRecord,
   RequiredFieldConfig,
@@ -68,6 +70,7 @@ import { MyRequestsModal } from './components/MyRequestsModal';
 import { LoginPage, SYSTEM_ACCOUNTS } from './components/LoginPage';
 import { TrackingModule } from './components/TrackingModule';
 import { DEFAULT_USER_GROUPS, UserManagerModule } from './components/UserManagerModule';
+import { DEFAULT_PROCESS_PHASES, ProcessDesignerModule } from './components/ProcessDesignerModule';
 
 interface NavGroup {
   group: string;
@@ -106,6 +109,7 @@ const NAV_GROUPS: NavGroup[] = [
     group: 'Tracking & Audit',
     items: [
       { key: 'tracking', code: 'TRK', label: 'End-to-End Tracking', icon: Route },
+      { key: 'workflow', code: 'WFL', label: 'Process Designer', icon: GitFork },
       { key: 'logs', code: 'LOG', label: 'Transaction Logs', icon: History },
       { key: 'users', code: 'USR', label: 'User Manager', icon: Users },
     ],
@@ -155,8 +159,14 @@ function useCachedState<T>(key: string, defaultValue: T): [T, React.Dispatch<Rea
 }
 
 export function App() {
-  const [accounts, setAccounts] = useCachedState<UserAccount[]>('accounts', SYSTEM_ACCOUNTS);
+  const [rawAccounts, setAccounts] = useCachedState<UserAccount[]>('accounts', SYSTEM_ACCOUNTS);
+  const admin2Preset = SYSTEM_ACCOUNTS.find((a) => a.id === 'usr-admin-2');
+  const accounts =
+    admin2Preset && !rawAccounts.some((a) => a.id === 'usr-admin-2')
+      ? [...rawAccounts, admin2Preset]
+      : rawAccounts;
   const [groups, setGroups] = useCachedState<UserGroup[]>('userGroups', DEFAULT_USER_GROUPS);
+  const [processPhases, setProcessPhases] = useCachedState<ProcessPhaseConfig[]>('processPhases', DEFAULT_PROCESS_PHASES);
   const [currentUser, setCurrentUser] = useCachedState<UserAccount | null>('currentUser', null);
   const [activeModule, setActiveModule] = useCachedState<ModuleKey>('activeModule', 'boq');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -197,6 +207,7 @@ export function App() {
     setBusinessUnit('PROJ-TWRB');
     setAccounts(SYSTEM_ACCOUNTS);
     setGroups(DEFAULT_USER_GROUPS);
+    setProcessPhases(DEFAULT_PROCESS_PHASES);
     setActiveModule(currentUser ? ROLE_DEFAULT_MODULE[currentUser.role] : 'boq');
     setBoqItems(INITIAL_BOQ_ITEMS);
     setBoqStatus('Draft');
@@ -552,41 +563,44 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#eef0f3] text-[#1f2328]">
-      {/* Infor SunSystems Top Masthead */}
-      <header className="bg-[#23262b] text-white h-12 flex items-center justify-between px-3 border-b border-[#16181c] sticky top-0 z-40">
+    <div className="min-h-screen flex flex-col bg-[#f5f7fb] text-[#1e293b]">
+      {/* Clean Light Top Masthead */}
+      <header className="bg-white text-[#1e293b] h-13 flex items-center justify-between px-4 border-b border-[#dce2ec] sticky top-0 z-40 shadow-xs">
         <div className="flex items-center gap-3">
           {/* Desktop sidebar toggle / Mobile drawer toggle */}
           <button
             onClick={() => setSidebarOpen((v) => !v)}
-            className="hidden lg:flex p-1.5 rounded hover:bg-[#32363e] text-slate-300 cursor-pointer"
+            className="hidden lg:flex p-1.5 rounded-md hover:bg-[#f1f5f9] text-[#475569] cursor-pointer"
             title="Toggle Navigation Panel"
           >
             <Menu className="w-4 h-4" />
           </button>
           <button
             onClick={() => setMobileMenuOpen((v) => !v)}
-            className="lg:hidden p-1.5 rounded hover:bg-[#32363e] text-slate-300 cursor-pointer"
+            className="lg:hidden p-1.5 rounded-md hover:bg-[#f1f5f9] text-[#475569] cursor-pointer"
             title="Open Menu"
           >
             <Menu className="w-4 h-4" />
           </button>
 
           {/* Brand Title */}
-          <span className="text-xs font-semibold tracking-wide uppercase text-slate-200">
-            Purchasing &amp; Inventory System
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#2c3e96]" />
+            <span className="text-xs font-bold tracking-wide uppercase text-[#1e293b]">
+              Purchasing &amp; Inventory System
+            </span>
+          </div>
 
-          {/* SunSystems Function Code Quick-Launch (hidden for Requestors to keep UI clean) */}
+          {/* Function Code Quick-Launch (hidden for Requestors to keep UI clean) */}
           {!isRequestor && (
-            <form onSubmit={handleFunctionJump} className="hidden md:flex items-center ml-4">
+            <form onSubmit={handleFunctionJump} className="hidden md:flex items-center ml-3">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-[#64748b] absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   value={funcJump}
                   onChange={(e) => setFuncJump(e.target.value)}
-                  placeholder="Function code (BOQ, PR, PO, RCV)..."
-                  className="w-60 pl-8 pr-2.5 py-1 text-xs bg-[#181a1e] border border-[#3c414a] rounded-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#0072ed]"
+                  placeholder="Search module (BOQ, PR, PO, RCV)..."
+                  className="w-60 pl-8 pr-2.5 py-1.5 text-xs bg-[#f8fafc] border border-[#cbd5e1] rounded-md text-[#1e293b] placeholder:text-[#94a3b8] focus:outline-none focus:border-[#1976d2]"
                 />
               </div>
             </form>
@@ -598,10 +612,10 @@ export function App() {
           <button
             type="button"
             onClick={() => setShowMyRequestsModal(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#181a1e] hover:bg-[#32363e] text-slate-100 border border-[#3c414a] text-xs font-semibold rounded-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#f8fafc] hover:bg-[#eef2f6] text-[#1e293b] border border-[#cbd5e1] text-xs font-semibold rounded-md cursor-pointer"
             title="View all submitted requests (PR, WD, PO) in one place"
           >
-            <ClipboardList className="w-3.5 h-3.5 text-[#4da3ff]" />
+            <ClipboardList className="w-3.5 h-3.5 text-[#1976d2]" />
             <span>My Requests ({visiblePrs.length + visibleWithdrawals.length + visiblePos.length})</span>
           </button>
 
@@ -609,7 +623,7 @@ export function App() {
           <button
             type="button"
             onClick={() => setShowNewRequestModal(true)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#0072ed] hover:bg-[#005ec4] text-white text-xs font-semibold rounded-xs cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1976d2] hover:bg-[#1565c0] text-white text-xs font-semibold rounded-md cursor-pointer shadow-xs"
             title="Open New Request Form (Purchase Requisition or Material Withdrawal)"
           >
             <FilePlus2 className="w-3.5 h-3.5" />
@@ -617,33 +631,33 @@ export function App() {
           </button>
 
           {/* Project / Business Unit Selector */}
-          <div className="hidden sm:flex items-center gap-1.5 bg-[#181a1e] px-2.5 py-1 border border-[#3c414a] rounded-xs text-xs">
-            <span className="text-slate-400">Project:</span>
+          <div className="hidden sm:flex items-center gap-1.5 bg-[#f8fafc] px-2.5 py-1.5 border border-[#cbd5e1] rounded-md text-xs">
+            <span className="text-[#64748b]">Project:</span>
             <select
               value={businessUnit}
               onChange={(e) => handleProjectChange(e.target.value)}
-              className="bg-transparent text-white font-semibold focus:outline-none cursor-pointer"
+              className="bg-transparent text-[#1e293b] font-semibold focus:outline-none cursor-pointer"
             >
-              <option value="PROJ-TWRB" className="text-slate-900">PROJ-TWRB (Tower B)</option>
-              <option value="PROJ-CIVIL1" className="text-slate-900">PROJ-CIVIL1 (Site Infra)</option>
+              <option value="PROJ-TWRB">PROJ-TWRB (Tower B)</option>
+              <option value="PROJ-CIVIL1">PROJ-CIVIL1 (Site Infra)</option>
             </select>
           </div>
 
           {/* Logged-In User & Sign Out */}
-          <div className="flex items-center gap-1.5 bg-[#181a1e] px-2.5 py-1 border border-[#3c414a] rounded-xs text-xs">
-            <UserCheck className="w-3.5 h-3.5 text-[#4da3ff]" />
-            <span className="font-medium text-white hidden md:inline">{liveUser.fullName}</span>
-            <span className="text-[10px] font-semibold px-1.5 py-0.2 bg-[#0072ed]/25 text-[#7ebbff] border border-[#0072ed]/40 rounded-[2px]">
+          <div className="flex items-center gap-1.5 bg-[#eff6ff] px-2.5 py-1.5 border border-[#bfdbfe] rounded-md text-xs">
+            <UserCheck className="w-3.5 h-3.5 text-[#1976d2]" />
+            <span className="font-semibold text-[#1e3a8a] hidden md:inline">{liveUser.fullName}</span>
+            <span className="text-[10px] font-semibold px-1.5 py-0.2 bg-white text-[#1d4ed8] border border-[#bfdbfe] rounded">
               {activeRole}
             </span>
           </div>
           <button
             type="button"
             onClick={handleLogout}
-            className="inline-flex items-center gap-1 px-2 py-1 bg-[#181a1e] hover:bg-[#32363e] text-slate-200 border border-[#3c414a] rounded-xs text-xs font-medium cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-[#f8fafc] text-[#475569] border border-[#cbd5e1] rounded-md text-xs font-medium cursor-pointer"
             title="Sign Out / Switch Account"
           >
-            <LogOut className="w-3.5 h-3.5 text-slate-400" />
+            <LogOut className="w-3.5 h-3.5 text-[#64748b]" />
             <span className="hidden sm:inline">Sign Out</span>
           </button>
 
@@ -654,10 +668,10 @@ export function App() {
                 setShowNotifs((v) => !v);
                 setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
               }}
-              className="relative p-1.5 rounded-xs bg-[#32363e] hover:bg-[#3f444e] border border-[#454b56] cursor-pointer"
+              className="relative p-1.5 rounded-md bg-[#f8fafc] hover:bg-[#eef2f6] border border-[#cbd5e1] cursor-pointer"
               title="Notifications"
             >
-              <Bell className="w-4 h-4 text-slate-200" />
+              <Bell className="w-4 h-4 text-[#475569]" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#d5002b] text-white text-[10px] font-bold flex items-center justify-center">
                   {unreadCount}
@@ -708,25 +722,29 @@ export function App() {
       <div className="flex-1 flex relative">
         {/* Desktop Left Navigation Rail */}
         {sidebarOpen && (
-          <aside className="hidden lg:flex flex-col w-60 bg-[#2b2f36] text-slate-200 border-r border-[#1f2228] shrink-0">
-            <div className="px-3 py-2.5 border-b border-[#3a3f48] flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Functions
+          <aside className="hidden lg:flex flex-col w-60 bg-white text-[#334155] border-r border-[#dce2ec] shrink-0">
+            <div className="px-3.5 py-2.5 border-b border-[#eef2f6] flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748b]">
+                Navigation
               </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 bg-[#1c1f24] text-[#4da3ff] border border-[#3c414a] rounded-xs">
+              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe] rounded">
                 {activeRole === 'Applicant/Requestor'
-                  ? 'APPLICANT'
+                  ? 'REQUESTOR'
                   : activeRole === 'REQ Approver'
                   ? 'REQ APPR'
                   : activeRole === 'PO Approver'
                   ? 'PO APPR'
+                  : activeRole === 'Purchaser'
+                  ? 'PURCHASER'
+                  : activeRole === 'Admin'
+                  ? 'ADMIN'
                   : 'WAREHOUSE'}
               </span>
             </div>
-            <nav className="flex-1 overflow-y-auto py-2 space-y-4">
+            <nav className="flex-1 overflow-y-auto py-2.5 px-2 space-y-4">
               {visibleNavGroups.map((group) => (
                 <div key={group.group}>
-                  <div className="px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="px-2 mb-1 text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">
                     {group.group}
                   </div>
                   <div className="space-y-0.5">
@@ -737,14 +755,18 @@ export function App() {
                         <button
                           key={item.key}
                           onClick={() => setActiveModule(item.key)}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left transition-colors cursor-pointer border-l-3 ${
+                          className={`w-full flex items-center gap-2.5 px-2.5 py-2 text-xs text-left transition-colors cursor-pointer rounded-md border-l-3 ${
                             isActive
-                              ? 'bg-[#1f2328] text-white border-[#0072ed] font-semibold'
-                              : 'text-slate-300 border-transparent hover:bg-[#343942] hover:text-white'
+                              ? 'bg-[#eff6ff] text-[#1e3a8a] border-[#1976d2] font-semibold'
+                              : 'text-[#475569] border-transparent hover:bg-[#f8fafc] hover:text-[#1e293b]'
                           }`}
                         >
-                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#4da3ff]' : 'text-slate-400'}`} />
-                          <span className="font-mono text-[11px] px-1 py-0.2 bg-[#1c1f24] text-slate-300 rounded-xs border border-[#3c414a]">
+                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#1976d2]' : 'text-[#64748b]'}`} />
+                          <span className={`font-mono text-[10.5px] px-1.5 py-0.5 rounded border ${
+                            isActive
+                              ? 'bg-white text-[#1976d2] border-[#bfdbfe]'
+                              : 'bg-[#f1f5f9] text-[#475569] border-[#e2e8f0]'
+                          }`}>
                             {item.code}
                           </span>
                           <span className="truncate">{item.label}</span>
@@ -761,19 +783,19 @@ export function App() {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-50 lg:hidden flex">
-            <div className="w-64 bg-[#2b2f36] text-slate-200 h-full flex flex-col shadow-2xl">
-              <div className="px-3 py-3 border-b border-[#3a3f48] flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-white">
-                  SunSystems Menu
+            <div className="w-64 bg-white text-[#334155] h-full flex flex-col shadow-2xl border-r border-[#dce2ec]">
+              <div className="px-3.5 py-3 border-b border-[#eef2f6] flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#1e293b]">
+                  Menu
                 </span>
-                <button onClick={() => setMobileMenuOpen(false)} className="text-slate-400 hover:text-white">
+                <button onClick={() => setMobileMenuOpen(false)} className="text-[#64748b] hover:text-[#1e293b]">
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <nav className="flex-1 overflow-y-auto py-2 space-y-4">
+              <nav className="flex-1 overflow-y-auto py-2.5 px-2 space-y-4">
                 {visibleNavGroups.map((group) => (
                   <div key={group.group}>
-                    <div className="px-3 mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <div className="px-2 mb-1 text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">
                       {group.group}
                     </div>
                     {group.items.map((item) => {
@@ -786,14 +808,14 @@ export function App() {
                             setActiveModule(item.key);
                             setMobileMenuOpen(false);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left border-l-3 ${
+                          className={`w-full flex items-center gap-2.5 px-2.5 py-2 text-xs text-left rounded-md border-l-3 ${
                             isActive
-                              ? 'bg-[#1f2328] text-white border-[#0072ed] font-semibold'
-                              : 'text-slate-300 border-transparent hover:bg-[#343942]'
+                              ? 'bg-[#eff6ff] text-[#1e3a8a] border-[#1976d2] font-semibold'
+                              : 'text-[#475569] border-transparent hover:bg-[#f8fafc]'
                           }`}
                         >
                           <Icon className="w-4 h-4 shrink-0" />
-                          <span className="font-mono text-[11px] px-1 bg-[#1c1f24] rounded-xs">
+                          <span className="font-mono text-[10.5px] px-1.5 py-0.5 bg-[#f1f5f9] rounded border border-[#e2e8f0]">
                             {item.code}
                           </span>
                           <span>{item.label}</span>
@@ -804,24 +826,22 @@ export function App() {
                 ))}
               </nav>
             </div>
-            <div className="flex-1 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+            <div className="flex-1 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
           </div>
         )}
 
         {/* Right Workspace Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* SunSystems Context Breadcrumb & Process Bar */}
-          <div className="bg-white border-b border-[#cfd5dc] px-4 py-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs text-slate-600">
-              <span className="font-semibold text-slate-800">{businessUnit}</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span>Procurement & Material Control</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span className="font-mono font-bold text-[#0072ed]">{activeNavItem.code}</span>
-              <span className="font-semibold text-slate-900">— {activeNavItem.label}</span>
+          {/* Indigo Process Context Bar */}
+          <div className="bg-[#2c3e96] text-white px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs text-blue-100">
+              <span className="font-semibold text-white">{businessUnit}</span>
+              <ChevronRight className="w-3.5 h-3.5 text-blue-300" />
+              <span className="font-mono font-bold text-white bg-[#3b4fa8] px-1.5 py-0.5 rounded">{activeNavItem.code}</span>
+              <span className="font-semibold text-white">{activeNavItem.label}</span>
             </div>
-            <div className="text-[11px] text-slate-500 font-mono">
-              Period: 2026/011 • Ledger: ACTUALS • Role: {activeRole}
+            <div className="text-[11px] text-blue-100 font-mono">
+              Period: 2026/011 • Role: {activeRole}
             </div>
           </div>
 
@@ -849,6 +869,8 @@ export function App() {
               'Audit trail of all actions, approvals, rejections, stock updates, and notifications across modules.'}
             {activeModule === 'users' &&
               'Create user accounts, assign roles, and customize exactly which modules each user can access.'}
+            {activeModule === 'workflow' &&
+              'Visual phase-by-phase process designer: click any route or + to configure approval gateways, conditions, and recipients.'}
           </div>
 
           {/* Active Form Canvas */}
@@ -970,6 +992,26 @@ export function App() {
                     setActiveModule(mod);
                   }
                 }}
+              />
+            )}
+
+            {activeModule === 'workflow' && (
+              <ProcessDesignerModule
+                phases={processPhases}
+                setPhases={setProcessPhases}
+                accounts={accounts}
+                groups={groups}
+                prs={visiblePrs}
+                pos={visiblePos}
+                receivings={receivings}
+                withdrawals={visibleWithdrawals}
+                onOpenNewRequest={() => setShowNewRequestModal(true)}
+                onNavigate={(mod) => {
+                  if (allowedModules.includes(mod)) {
+                    setActiveModule(mod);
+                  }
+                }}
+                onAddLog={addLog}
               />
             )}
 
